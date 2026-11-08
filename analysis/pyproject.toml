@@ -1,0 +1,13 @@
+[project]
+name = "benchkit"
+version = "0.1.0"
+description = "Analysis pipeline for the Flutter-vs-native on-device AI benchmark"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
