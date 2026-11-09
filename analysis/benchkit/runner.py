@@ -219,8 +219,8 @@ def run_single_app(pkg: str, act: str, session: int, serial: str | None = None) 
                 if not res.stdout.strip():
                     print(f"\n[INFO] Process {pkg} exited on device.")
                     break
-                if time.time() - last_log_time > 300:
-                    print(f"\n[WARN] Watchdog timeout: 5 minutes idle for {pkg}.")
+                if time.time() - last_log_time > 900:
+                    print(f"\n[WARN] Watchdog timeout: 15 minutes idle for {pkg}.")
                     break
     finally:
         proc.kill()

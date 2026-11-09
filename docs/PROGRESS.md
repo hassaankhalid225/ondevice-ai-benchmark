@@ -28,16 +28,19 @@ Phase 1 (Literature Review), Phase 2 (Benchmark Harness Applications for Flutter
 - **Session 6 (Even: Native First):**
   - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
   - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Seed: `20261115` (`20261109L + 6`).
-  - Total records collected to date: **16,512 raw records across 209 files**.
-- **Next to Execute: Session 7 (Odd: Flutter First):**
-  - Order protocol: Flutter first (18 configs), followed by Native Android (18 configs).
+- **Session 7 (Odd: Flutter First):**
+  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
+  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
   - Seed: `20261116` (`20261109L + 7`).
-  - Device telemetry: Battery 90% (charging), thermal state normal (30.0°C).
+  - Total records collected to date: **21,088 raw records across 245 files**.
+- **Next to Execute: Final Session 8 (Even: Native First):**
+  - Order protocol: Native Android first (18 configs), followed by Flutter (18 configs).
+  - Seed: `20261117` (`20261109L + 8`).
+  - Device telemetry: Battery 91% (charging), thermal state normal (30.0°C).
 - **Empirical Dataset Status:**
-  - Raw dataset: **209 JSONL benchmark files** in `data/raw/dev-infinix-x650c/`.
-  - Schema validation: **209/209 files (100%) PASS** `benchkit validate` against `benchmark-spec/result-schema.json` v1.1.
-  - Summary aggregation: `data/processed/summary.csv` generated (**192 metric summary rows**, 16,272 valid empirical measurements).
+  - Raw dataset: **245 JSONL benchmark files** in `data/raw/dev-infinix-x650c/`.
+  - Schema validation: **245/245 files (100%) PASS** `benchkit validate` against `benchmark-spec/result-schema.json` v1.1.
+  - Summary aggregation: `data/processed/summary.csv` generated (**192 metric summary rows**, 20,848 valid empirical measurements).
   - Multi-session statistical comparisons: `data/processed/comparisons.csv` generated (**80 cross-platform comparisons** computing Mann-Whitney U, Cliff's delta, Holm-adjusted p-values, and bootstrap ratio 95% CIs).
   - Publication artifacts: 4 vector figures in `paper/figures/` and 2 LaTeX tables in `paper/tables/`.
   - Research paper: `paper/sections/04-results.tex` fully drafted with empirical findings answering RQ1–RQ5.
