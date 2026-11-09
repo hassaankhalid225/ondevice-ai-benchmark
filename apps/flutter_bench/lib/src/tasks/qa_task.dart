@@ -126,3 +126,4 @@ class QATask implements BenchmarkTask {
     return 'qa:$bestStart-$bestEnd';
   }
 }
+

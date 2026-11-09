@@ -107,3 +107,4 @@ class ClassificationTask implements BenchmarkTask {
     return 'cls:$maxIdx';
   }
 }
+

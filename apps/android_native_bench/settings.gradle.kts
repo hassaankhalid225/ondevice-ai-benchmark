@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "android_native_bench"
 include(":app")
+

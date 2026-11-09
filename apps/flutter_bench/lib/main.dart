@@ -41,3 +41,4 @@ class BenchmarkApp extends StatelessWidget {
     );
   }
 }
+

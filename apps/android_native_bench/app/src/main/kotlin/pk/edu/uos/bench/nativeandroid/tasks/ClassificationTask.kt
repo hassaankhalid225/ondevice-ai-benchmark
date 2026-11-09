@@ -91,3 +91,4 @@ class ClassificationTask(
         return "cls:$maxIdx"
     }
 }
+

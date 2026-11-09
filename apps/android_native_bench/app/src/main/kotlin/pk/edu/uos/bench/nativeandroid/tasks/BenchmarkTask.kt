@@ -10,3 +10,4 @@ interface BenchmarkTask {
     fun runInference(interpreter: Interpreter, preprocessedInput: Any): Any
     fun postprocess(inferenceOutput: Any): String
 }
+

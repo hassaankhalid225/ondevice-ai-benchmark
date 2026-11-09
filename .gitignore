@@ -35,8 +35,14 @@ apps/flutter_bench/.dart_tool/
 apps/flutter_bench/build/
 apps/flutter_bench/.flutter-plugins*
 apps/flutter_bench/.packages
+apps/flutter_bench/android/build/
+apps/flutter_bench/android/.gradle/
+apps/flutter_bench/android/.kotlin/
+apps/flutter_bench/android/local.properties
 
 # --- android ---
+.gradle/
+.kotlin/
 apps/android_native_bench/.gradle/
 apps/android_native_bench/build/
 apps/android_native_bench/app/build/

@@ -89,3 +89,4 @@ object SystemMetrics {
         return if (chargeUah != Long.MIN_VALUE) chargeUah else 0L
     }
 }
+

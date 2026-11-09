@@ -26,19 +26,22 @@ Adopt Option 2. Pin exact toolchain and dependency versions across both harness 
 ### Flutter Harness (`apps/flutter_bench`)
 - **Flutter SDK:** 3.44.5 (stable channel)
 - **Dart SDK:** 3.12.2
+- **Android Gradle Plugin (AGP):** 8.6.0
+- **Compile SDK:** 36, **NDK:** 28.2.13676358
 - **Key dependencies:**
-  - `tflite_flutter: 0.10.4` (pins LiteRT/TFLite C runtime with `lastNativeInferenceDurationMicroSeconds`)
+  - `tflite_flutter: 0.12.1` (compatible with Dart 3.12 typed data views; exposes `lastNativeInferenceDurationMicroSeconds`)
   - `image: 4.3.0` (canonical pure Dart image decoding and bilinear resizing for realistic developer baseline)
 
 ### Android Native Harness (`apps/android_native_bench`)
-- **Build System:** Gradle 8.5 with Android Gradle Plugin (AGP) 8.3.2
+- **Build System:** Gradle 8.14 with Android Gradle Plugin (AGP) 8.3.2
 - **Language:** Kotlin 1.9.24
-- **Java Toolchain:** JDK 17
+- **Java Toolchain:** OpenJDK 21 (Android Studio JBR)
 - **Target / Compile SDK:** 34 (Android 14)
 - **Min SDK:** 26 (Android 8.0, supporting hardware bitmap decoding and NNAPI 1.0+)
 - **LiteRT / TFLite dependencies:**
   - `org.tensorflow:tensorflow-lite:2.16.1`
   - `org.tensorflow:tensorflow-lite-gpu:2.16.1`
+  - `org.tensorflow:tensorflow-lite-gpu-api:2.16.1`
   - `org.tensorflow:tensorflow-lite-api:2.16.1`
 
 ### Parity Timers (ADR-0006 verification)
@@ -52,3 +55,4 @@ Adopt Option 2. Pin exact toolchain and dependency versions across both harness 
 - Both harness apps compile against the identical LiteRT runtime baseline.
 - No dynamic version resolution will alter benchmark behavior.
 - Documented in `paper/sections/03-methodology.tex` and `docs/PROGRESS.md`.
+

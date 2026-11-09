@@ -7,3 +7,4 @@ abstract class BenchmarkTask {
   dynamic runInference(Interpreter interpreter, dynamic preprocessedInput);
   String postprocess(dynamic inferenceOutput);
 }
+

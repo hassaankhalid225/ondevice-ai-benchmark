@@ -105,3 +105,4 @@ class DetectionTask implements BenchmarkTask {
     return 'det:$count';
   }
 }
+
