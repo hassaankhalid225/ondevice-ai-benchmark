@@ -12,43 +12,31 @@ class DetectionTask implements BenchmarkTask {
   final int inputSize = 320;
   final int maxDetections = 10;
 
-  late dynamic inputBuffer;
+  late Float32List _floatInput;
+  late Uint8List _inputBytes;
   late Map<int, Object> outputMap;
 
   final outputBoxes = List.generate(
     1,
-    (_) => List.generate(10, (_) => Float32List(4)),
+    (_) => List.generate(10, (_) => List.filled(4, 0.0)),
   );
-  final outputClasses = List.generate(1, (_) => Float32List(10));
-  final outputScores = List.generate(1, (_) => Float32List(10));
-  final numDetections = Float32List(1);
+  final outputClasses = List.generate(1, (_) => List.filled(10, 0.0));
+  final outputScores = List.generate(1, (_) => List.filled(10, 0.0));
+  final numDetections = List.generate(1, (_) => List.filled(1, 0.0));
 
   DetectionTask({required this.isInt8});
 
   @override
   Future<void> init() async {
-    if (isInt8) {
-      inputBuffer = List.generate(
-        1,
-        (_) => List.generate(
-          inputSize,
-          (_) => List.generate(inputSize, (_) => Int8List(3)),
-        ),
-      );
-    } else {
-      inputBuffer = List.generate(
-        1,
-        (_) => List.generate(
-          inputSize,
-          (_) => List.generate(inputSize, (_) => Float32List(3)),
-        ),
-      );
-    }
+    final totalElements = 1 * inputSize * inputSize * 3;
+    _floatInput = Float32List(totalElements);
+    _inputBytes = _floatInput.buffer.asUint8List();
+
     outputMap = {
-      0: outputBoxes,
-      1: outputClasses,
-      2: outputScores,
-      3: numDetections,
+      0: outputScores,
+      1: numDetections,
+      2: outputBoxes,
+      3: outputClasses,
     };
   }
 
@@ -66,6 +54,7 @@ class DetectionTask implements BenchmarkTask {
       interpolation: img_lib.Interpolation.linear,
     );
 
+    int idx = 0;
     for (int y = 0; y < inputSize; y++) {
       for (int x = 0; x < inputSize; x++) {
         final pixel = resized.getPixel(x, y);
@@ -73,18 +62,13 @@ class DetectionTask implements BenchmarkTask {
         final g = pixel.g.toInt();
         final b = pixel.b.toInt();
 
-        if (isInt8) {
-          inputBuffer[0][y][x][0] = r - 128;
-          inputBuffer[0][y][x][1] = g - 128;
-          inputBuffer[0][y][x][2] = b - 128;
-        } else {
-          inputBuffer[0][y][x][0] = r / 255.0;
-          inputBuffer[0][y][x][1] = g / 255.0;
-          inputBuffer[0][y][x][2] = b / 255.0;
-        }
+        _floatInput[idx] = r / 255.0;
+        _floatInput[idx + 1] = g / 255.0;
+        _floatInput[idx + 2] = b / 255.0;
+        idx += 3;
       }
     }
-    return inputBuffer;
+    return _inputBytes;
   }
 
   @override
@@ -95,10 +79,10 @@ class DetectionTask implements BenchmarkTask {
 
   @override
   String postprocess(dynamic inferenceOutput) {
-    final scores = (inferenceOutput as List)[0] as List<double>;
+    final scores = (inferenceOutput as List)[0] as List;
     int count = 0;
     for (final s in scores) {
-      if (s >= 0.5) {
+      if ((s as num).toDouble() >= 0.5) {
         count++;
       }
     }

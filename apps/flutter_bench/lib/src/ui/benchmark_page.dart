@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../config/benchmark_config.dart';
 import '../harness/benchmark_runner.dart';
+import '../metrics/system_metrics.dart';
 
 class BenchmarkPage extends StatefulWidget {
   final int session;
@@ -25,20 +26,28 @@ class _BenchmarkPageState extends State<BenchmarkPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.autorun) {
+    _checkIntentAndAutorun();
+  }
+
+  Future<void> _checkIntentAndAutorun() async {
+    final extras = await SystemMetrics.getIntentExtras();
+    final intentSession = extras['session'] as int? ?? widget.session;
+    final intentAutorun = extras['autorun'] as bool? ?? widget.autorun;
+    if (intentAutorun) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        startBenchmarkSuite(widget.session);
+        startBenchmarkSuite(intentSession, autoFinish: true);
       });
     }
   }
 
   void appendLog(String line) {
+    SystemMetrics.log(line);
     setState(() {
       logs.writeln(line);
     });
   }
 
-  Future<void> startBenchmarkSuite(int session) async {
+  Future<void> startBenchmarkSuite(int session, {bool autoFinish = false}) async {
     if (isRunning) return;
     setState(() {
       isRunning = true;
@@ -76,13 +85,23 @@ class _BenchmarkPageState extends State<BenchmarkPage> {
       setState(() {
         status = 'Running: ${cfg.modelId} (${cfg.precision}, ${cfg.delegate})';
       });
-      await runner.runConfiguration(cfg);
+      try {
+        await runner.runConfiguration(cfg);
+      } catch (e) {
+        appendLog('[ERROR] Configuration failed: ${cfg.modelId} (${cfg.precision}, ${cfg.delegate}): $e');
+      }
     }
 
+    final completionMsg = 'Status: Session $session Completed!';
+    appendLog(completionMsg);
     setState(() {
-      status = 'Status: Session $session Completed!';
+      status = completionMsg;
       isRunning = false;
     });
+
+    if (autoFinish) {
+      await SystemMetrics.finish();
+    }
   }
 
   @override

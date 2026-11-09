@@ -12,31 +12,24 @@ class ClassificationTask implements BenchmarkTask {
   final int inputSize = 224;
   final int numClasses = 1001;
 
-  late dynamic inputBuffer;
+  late Float32List _floatInput;
+  late Int8List _int8Input;
+  late Uint8List _inputBytes;
   late dynamic outputBuffer;
 
   ClassificationTask({required this.isInt8});
 
   @override
   Future<void> init() async {
+    final totalElements = 1 * inputSize * inputSize * 3;
     if (isInt8) {
-      inputBuffer = List.generate(
-        1,
-        (_) => List.generate(
-          inputSize,
-          (_) => List.generate(inputSize, (_) => Int8List(3)),
-        ),
-      );
-      outputBuffer = List.generate(1, (_) => Int8List(numClasses));
+      _int8Input = Int8List(totalElements);
+      _inputBytes = _int8Input.buffer.asUint8List();
+      outputBuffer = List.generate(1, (_) => List.filled(numClasses, 0));
     } else {
-      inputBuffer = List.generate(
-        1,
-        (_) => List.generate(
-          inputSize,
-          (_) => List.generate(inputSize, (_) => Float32List(3)),
-        ),
-      );
-      outputBuffer = List.generate(1, (_) => Float32List(numClasses));
+      _floatInput = Float32List(totalElements);
+      _inputBytes = _floatInput.buffer.asUint8List();
+      outputBuffer = List.generate(1, (_) => List.filled(numClasses, 0.0));
     }
   }
 
@@ -55,6 +48,7 @@ class ClassificationTask implements BenchmarkTask {
       interpolation: img_lib.Interpolation.linear,
     );
 
+    int idx = 0;
     for (int y = 0; y < inputSize; y++) {
       for (int x = 0; x < inputSize; x++) {
         final pixel = resized.getPixel(x, y);
@@ -63,17 +57,18 @@ class ClassificationTask implements BenchmarkTask {
         final b = pixel.b.toInt();
 
         if (isInt8) {
-          inputBuffer[0][y][x][0] = r - 128;
-          inputBuffer[0][y][x][1] = g - 128;
-          inputBuffer[0][y][x][2] = b - 128;
+          _int8Input[idx] = r - 128;
+          _int8Input[idx + 1] = g - 128;
+          _int8Input[idx + 2] = b - 128;
         } else {
-          inputBuffer[0][y][x][0] = r / 255.0;
-          inputBuffer[0][y][x][1] = g / 255.0;
-          inputBuffer[0][y][x][2] = b / 255.0;
+          _floatInput[idx] = r / 255.0;
+          _floatInput[idx + 1] = g / 255.0;
+          _floatInput[idx + 2] = b / 255.0;
         }
+        idx += 3;
       }
     }
-    return inputBuffer;
+    return _inputBytes;
   }
 
   @override
@@ -86,20 +81,22 @@ class ClassificationTask implements BenchmarkTask {
   String postprocess(dynamic inferenceOutput) {
     int maxIdx = 0;
     if (isInt8) {
-      final list = (inferenceOutput as List)[0] as List<int>;
+      final list = (inferenceOutput as List)[0] as List;
       int maxVal = -129;
       for (int i = 0; i < list.length; i++) {
-        if (list[i] > maxVal) {
-          maxVal = list[i];
+        final val = (list[i] as num).toInt();
+        if (val > maxVal) {
+          maxVal = val;
           maxIdx = i;
         }
       }
     } else {
-      final list = (inferenceOutput as List)[0] as List<double>;
+      final list = (inferenceOutput as List)[0] as List;
       double maxVal = double.negativeInfinity;
       for (int i = 0; i < list.length; i++) {
-        if (list[i] > maxVal) {
-          maxVal = list[i];
+        final val = (list[i] as num).toDouble();
+        if (val > maxVal) {
+          maxVal = val;
           maxIdx = i;
         }
       }

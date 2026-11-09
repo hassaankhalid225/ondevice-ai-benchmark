@@ -5,7 +5,7 @@ paths and in every record.
 
 | device_id | Tier | Model | SoC | RAM | OS / API | Owner / source | Status |
 |---|---|---|---|---|---|---|---|
-| _dev-xxx-yyy_ | low | | | | | | planned |
+| `dev-infinix-x650c` | low | Infinix X650C (Hot 8) | MediaTek Helio P22 (MT6765) | 3.7 GB | Android 9 (API 28) | Hassaan Khalid | ready |
 | _dev-xxx-yyy_ | mid | | | | | | planned |
 | _dev-xxx-yyy_ | high | | | | | | planned |
 | _dev-apple-iphoneXX_ | iOS (optional) | | | | | | planned |

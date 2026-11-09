@@ -20,19 +20,19 @@ class DetectionTask(
     private val outputBoxes = Array(1) { Array(maxDetections) { FloatArray(4) } }
     private val outputClasses = Array(1) { FloatArray(maxDetections) }
     private val outputScores = Array(1) { FloatArray(maxDetections) }
-    private val numDetections = FloatArray(1)
+    private val numDetections = Array(1) { FloatArray(1) }
     private lateinit var outputMap: Map<Int, Any>
 
     override fun init(context: Context) {
-        val bytesPerChannel = if (isInt8) 1 else 4
-        inputBuffer = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * bytesPerChannel).apply {
+        // EfficientDet-Lite input tensor (serving_default_input_tensor:0) is float32[1, 320, 320, 3] for both FP32 and INT8
+        inputBuffer = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * 4).apply {
             order(ByteOrder.nativeOrder())
         }
         outputMap = mapOf(
-            0 to outputBoxes,
-            1 to outputClasses,
-            2 to outputScores,
-            3 to numDetections
+            0 to outputScores,
+            1 to numDetections,
+            2 to outputBoxes,
+            3 to outputClasses
         )
     }
 
@@ -52,15 +52,9 @@ class DetectionTask(
             val g = (pixel shr 8) and 0xFF
             val b = pixel and 0xFF
 
-            if (isInt8) {
-                inputBuffer.put((r - 128).toByte())
-                inputBuffer.put((g - 128).toByte())
-                inputBuffer.put((b - 128).toByte())
-            } else {
-                inputBuffer.putFloat(r / 255.0f)
-                inputBuffer.putFloat(g / 255.0f)
-                inputBuffer.putFloat(b / 255.0f)
-            }
+            inputBuffer.putFloat(r / 255.0f)
+            inputBuffer.putFloat(g / 255.0f)
+            inputBuffer.putFloat(b / 255.0f)
         }
         return inputBuffer
     }

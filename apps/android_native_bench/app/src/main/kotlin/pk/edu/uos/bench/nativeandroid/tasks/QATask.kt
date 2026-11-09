@@ -25,8 +25,8 @@ class QATask(
 
     override fun init(context: Context) {
         outputMap = mapOf(
-            0 to startLogits,
-            1 to endLogits
+            0 to endLogits,
+            1 to startLogits
         )
         // Load text QA pairs
         context.assets.open("inputs/text.jsonl").use { stream ->

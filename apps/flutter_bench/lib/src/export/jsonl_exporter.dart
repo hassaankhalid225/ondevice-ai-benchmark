@@ -73,6 +73,10 @@ class JsonlExporter {
     final osVersion = await SystemMetrics.getOsVersion();
     final apiLevel = await SystemMetrics.getApiLevel();
 
+    final spec = BenchmarkRegistry.getModelSpec(config.modelId);
+    final isInt8 = config.precision == 'int8';
+    final modelSha256 = isInt8 ? spec.int8Sha256 : spec.fp32Sha256;
+
     final sink = file.openWrite(mode: FileMode.append);
 
     for (final r in _records) {
@@ -91,17 +95,18 @@ class JsonlExporter {
         'runtime': 'litert',
         'runtime_version': '2.16.1',
         'model_id': config.modelId,
+        'model_sha256': modelSha256,
         'precision': config.precision,
         'delegate': config.delegate,
-        'cpu_threads': config.threads,
+        'threads': config.threads,
         'session': r.session,
         'run_id': r.runId,
         'phase': r.phase,
+        'iteration': r.iteration ?? 0,
+        'input_index': r.inputIndex ?? 0,
+        'status': r.status,
       };
 
-      if (r.iteration != null) map['iteration'] = r.iteration;
-      if (r.inputIndex != null) map['input_index'] = r.inputIndex;
-      map['status'] = r.status;
       if (r.errorMessage != null) map['error_message'] = r.errorMessage;
 
       if (r.preprocessMs != null) map['preprocess_ms'] = _round3(r.preprocessMs!);

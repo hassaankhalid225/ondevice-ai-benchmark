@@ -24,7 +24,7 @@ class ClassificationTask(
             order(ByteOrder.nativeOrder())
         }
         outputBuffer = if (isInt8) {
-            ByteArray(1 * numClasses)
+            Array(1) { ByteArray(numClasses) }
         } else {
             Array(1) { FloatArray(numClasses) }
         }
@@ -69,7 +69,8 @@ class ClassificationTask(
     override fun postprocess(inferenceOutput: Any): String {
         var maxIdx = 0
         if (isInt8) {
-            val arr = inferenceOutput as ByteArray
+            @Suppress("UNCHECKED_CAST")
+            val arr = (inferenceOutput as Array<ByteArray>)[0]
             var maxVal = Byte.MIN_VALUE
             for (i in arr.indices) {
                 if (arr[i] > maxVal) {

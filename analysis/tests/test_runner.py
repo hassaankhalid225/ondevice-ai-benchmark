@@ -66,3 +66,17 @@ def test_preflight_check():
     with patch("benchkit.runner.run_adb", side_effect=mock_run_adb):
         ok = preflight_check("test-serial")
         assert ok is True
+
+
+def test_session_platform_order():
+    from benchkit.runner import FLUTTER_PKG, NATIVE_PKG
+    # Session 1: odd -> flutter first
+    order_1 = [("flutter", FLUTTER_PKG), ("native", NATIVE_PKG)] if 1 % 2 == 1 else [("native", NATIVE_PKG), ("flutter", FLUTTER_PKG)]
+    assert order_1[0][0] == "flutter"
+    assert order_1[1][0] == "native"
+
+    # Session 2: even -> native first
+    order_2 = [("flutter", FLUTTER_PKG), ("native", NATIVE_PKG)] if 2 % 2 == 1 else [("native", NATIVE_PKG), ("flutter", FLUTTER_PKG)]
+    assert order_2[0][0] == "native"
+    assert order_2[1][0] == "flutter"
+

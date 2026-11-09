@@ -217,6 +217,20 @@ class BenchmarkRunner(
             }
 
             onLog("[DONE] Finished ${config.modelId} (${config.precision}, ${config.delegate})")
+        } catch (e: Throwable) {
+            val err = "Inference execution failed: ${e.message}"
+            onLog("[ERROR] $err")
+            exporter.addRecord(
+                BenchmarkRecord(
+                    session = config.session,
+                    runId = runId,
+                    phase = "measure",
+                    iteration = null,
+                    inputIndex = null,
+                    status = "error",
+                    errorMessage = err
+                )
+            )
         } finally {
             interpreter.close()
             gpuDelegate?.close()

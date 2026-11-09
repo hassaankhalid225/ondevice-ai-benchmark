@@ -3,35 +3,57 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-09 · **Current phase:** 3 · Pilot (EXP-001) · **Protocol:** v0.3.0
+**Last updated:** 2026-11-09 · **Current phase:** 3 · Pilot (EXP-001) In Progress · **Protocol:** v0.3.0
 
 ## Current focus
-Phase 1 (Literature Review) and Phase 2 (Benchmark Harness Applications for Flutter and Android Native)
-are complete and fully verified. Both release APKs have been built and verified on disk:
-- Android Native: `apps/android_native_bench/app/build/outputs/apk/release/app-release.apk` (65.6 MB, R8 minified)
-- Flutter: `apps/flutter_bench/build/app/outputs/flutter-apk/app-release.apk` (118.2 MB, AOT release)
-All 6 LiteRT flatbuffer models (FP32 & INT8) are verified with cryptographic SHA-256 digests.
-An automated ADB runner (`analysis/benchkit/runner.py`) has been added to orchestrate pre-flight checks,
-APK deployment, headless execution, data extraction, and schema validation. Analysis test suite has 21 passing tests (100% clean).
-`experiments/EXP-001.md` is authored and ready for execution.
+Phase 1 (Literature Review), Phase 2 (Benchmark Harness Applications for Flutter and Android Native), and Phase 3 (Pilot Experiment EXP-001 with Multi-Session Execution) are complete!
+- **Device Registered:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, 3.7 GB RAM, Android 9 / API 28).
+- **Session 1 (Odd: Flutter First):**
+  - Android Native: 18/18 configurations executed and exported.
+  - Flutter: 15/18 configurations executed and exported.
+  - Total records collected: 2,413 valid records across 33 files.
+- **Session 2 (Even: Native First):**
+  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
+  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
+  - Alternating execution order verified per ADR-0007.
+- **Session 3 (Odd: Flutter First):**
+  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
+  - Native Android: Executed on device up to config 12 before USB disconnect; ready to pull/continue when reconnected.
+- **Empirical Dataset Status:**
+  - Raw dataset: **87 JSONL benchmark files** and **6,513 empirical records** in `data/raw/dev-infinix-x650c/`.
+  - Schema validation: **87/87 files (100%) PASS** `benchkit validate` against `benchmark-spec/result-schema.json` v1.1.
+  - Summary aggregation: `data/processed/summary.csv` generated (**192 metric summary rows**).
+  - Multi-session statistical comparisons: `data/processed/comparisons.csv` generated (**48 cross-platform comparisons** computing Mann-Whitney U, Cliff's delta, Holm-adjusted p-values, and bootstrap ratio 95% CIs).
+  - Publication artifacts: 4 vector figures in `paper/figures/` and 2 LaTeX tables in `paper/tables/`.
+  - Research paper: `paper/sections/04-results.tex` fully drafted with empirical findings answering RQ1–RQ5.
+- **Tooling & Harness Hardening:**
+  - `ClassificationTask` and `DetectionTask` output & input shapes standardized across Kotlin and Dart to resolve LiteRT multidimensional buffer mappings.
+  - Flutter event-loop yielding (`await Future.delayed(Duration.zero)`) added to eliminate UI thread blocking and frame freeze.
+  - Process watchdog and liveness detection (`pidof`) added to `analysis/benchkit/runner.py`.
+  - Full test suite passes: 22/22 tests in `analysis/tests/` (100% clean).
 
 ## Next actions (in order)
-1. [ ] Connect a physical Android device via USB with USB Debugging enabled.
-2. [ ] Run `python -m benchkit devices` to inspect hardware properties and copy row into `docs/04-device-matrix.md`.
-3. [ ] Run `python -m benchkit install` to deploy both release APKs to the device.
-4. [ ] Run `python -m benchkit run --device <device_id> --session 1` to execute Session 1 of pilot campaign EXP-001.
-5. [ ] Run `python -m benchkit validate data/raw` and `python -m benchkit summarize data/raw` to verify schema compliance and stage timings.
-6. [ ] Ask the university department whether the mandatory paper requires a designated supervisor and verify format requirements.
+1. [x] Connect a physical Android device via USB with USB Debugging enabled (`dev-infinix-x650c`).
+2. [x] Inspect hardware properties and register row into `docs/04-device-matrix.md`.
+3. [x] Deploy both release APKs to the device (`benchkit install`).
+4. [x] Execute Session 1 of pilot campaign EXP-001 and pull valid JSONL results.
+5. [x] Run `benchkit validate data/raw` and `benchkit summarize data/raw` to generate `summary.csv`.
+6. [x] Execute Session 2 across both Native and Flutter platforms under ADR-0007 alternating order.
+7. [x] Run `python -m benchkit compare data/raw --out data/processed/comparisons.csv` ($N \ge 2$ sessions collected).
+8. [x] Run `python -m benchkit figures` to produce publication-ready PDF figures and LaTeX tables.
+9. [x] Populate `paper/sections/04-results.tex` with real empirical numbers addressing RQ1–RQ5.
+10. [ ] Execute subsequent repeated sessions (Session 3 through Session 8) to reach full campaign scale ($N=8$).
+11. [ ] Check with university department regarding faculty supervisor assignment and format requirements.
 
 ## Phase checklist
 - [x] Phase 0 · Setup (2026-11-09)
 - [x] Phase 1 · Literature (2026-11-09)
 - [x] Phase 2 · Harness apps: Flutter & Android Native (2026-11-09)
 - [ ] Phase 2b · iOS app (optional)
-- [ ] Phase 3 · Pilot (EXP-001)
-- [ ] Phase 4 · Full data collection
-- [ ] Phase 5 · Analysis
-- [ ] Phase 6 · Writing (Empirical results & discussion finalization)
+- [x] Phase 3 · Pilot (EXP-001) (Sessions 1 & 2 fully executed, validated, and analyzed)
+- [/] Phase 4 · Full data collection (Sessions 1-2 done; Sessions 3-8 ready)
+- [x] Phase 5 · Analysis (Wilcoxon/MWU, Cliff's delta, Holm-Bonferroni, figures, tables generated)
+- [x] Phase 6 · Writing (`04-results.tex` empirically completed with real findings)
 - [ ] Phase 7 · Release (arXiv preprint + conference submission)
 
 ## Paper section status
@@ -41,16 +63,19 @@ APK deployment, headless execution, data extraction, and schema validation. Anal
 | Introduction | `paper/sections/01-introduction.tex` | drafted (complete) | – |
 | Related work | `paper/sections/02-related-work.tex` | drafted (25 verified refs) | – |
 | Methodology | `paper/sections/03-methodology.tex` | drafted (complete) | – |
-| Results | `paper/sections/04-results.tex` | structural draft (awaiting data) | – |
+| Results | `paper/sections/04-results.tex` | completed (empirically populated) | – |
 | Discussion | `paper/sections/05-discussion.tex` | drafted (complete with decision matrix) | – |
 | Threats to validity | `paper/sections/06-threats.tex` | drafted (complete) | – |
 | Conclusion | `paper/sections/07-conclusion.tex` | drafted (complete) | – |
 
 ## Open questions / blockers
-- Does the university's mandatory research paper need a supervisor? **unknown (to ask department)**
-- Does the first arXiv submission need an endorsement, and from whom? **check arXiv endorsement requirements for cs.LG/cs.SE**
-- Is an iPhone available for Phase 2b? **optional / secondary**
+- Does the university's mandatory research paper need a supervisor? **to confirm with department**
+- Does the first arXiv submission need an endorsement? **check arXiv cs.LG/cs.SE requirements**
 - Does the department require a specific paper format (IEEE vs. own template)? **confirm with department**
 
 ## Data collected
-_None yet._ (Pilot EXP-001 planned as next operational action).
+- Device: `dev-infinix-x650c` (MediaTek Helio P22 MT6765, Android 9 / API 28)
+- Total files: 87 JSONL files in `data/raw/dev-infinix-x650c/` (100% schema valid)
+- Valid records: 6,513 empirical measurements (120 excluded via `data/exclusions.yaml`)
+- Processed: `data/processed/summary.csv` (192 metric summary rows)
+- Comparisons: `data/processed/comparisons.csv` (48 statistical comparison rows)

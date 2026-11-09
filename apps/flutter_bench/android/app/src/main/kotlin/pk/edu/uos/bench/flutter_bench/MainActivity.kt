@@ -62,7 +62,10 @@ class MainActivity : FlutterActivity() {
                     result.success(if (charge != Long.MIN_VALUE) charge else 0L)
                 }
                 "getDeviceId" -> {
-                    val deviceId = "dev-${Build.MANUFACTURER.lowercase().replace(" ", "-")}-${Build.MODEL.lowercase().replace(" ", "-")}"
+                    val mfr = Build.MANUFACTURER.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
+                    val rawModel = Build.MODEL.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
+                    val cleanModel = if (rawModel.startsWith(mfr)) rawModel.removePrefix(mfr).trim('-') else rawModel
+                    val deviceId = "dev-$mfr-$cleanModel"
                     result.success(deviceId)
                 }
                 "getOsVersion" -> {
@@ -70,6 +73,20 @@ class MainActivity : FlutterActivity() {
                 }
                 "getApiLevel" -> {
                     result.success(Build.VERSION.SDK_INT)
+                }
+                "getIntentExtras" -> {
+                    val session = intent.getIntExtra("session", 1)
+                    val autorun = intent.getBooleanExtra("autorun", false)
+                    result.success(mapOf("session" to session, "autorun" to autorun))
+                }
+                "log" -> {
+                    val msg = call.argument<String>("message") ?: ""
+                    android.util.Log.i("BENCH", msg)
+                    result.success(true)
+                }
+                "finish" -> {
+                    finish()
+                    result.success(true)
                 }
                 else -> result.notImplemented()
             }

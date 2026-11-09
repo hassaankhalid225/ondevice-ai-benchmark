@@ -14,8 +14,8 @@ class QATask implements BenchmarkTask {
   late List<Int32List> inputMask;
   late List<Int32List> segmentIds;
 
-  late List<Float32List> startLogits;
-  late List<Float32List> endLogits;
+  late dynamic startLogits;
+  late dynamic endLogits;
   late Map<int, Object> outputMap;
 
   final List<Map<String, String>> qaEntries = [];
@@ -28,12 +28,12 @@ class QATask implements BenchmarkTask {
     inputMask = [Int32List(seqLength)];
     segmentIds = [Int32List(seqLength)];
 
-    startLogits = [Float32List(seqLength)];
-    endLogits = [Float32List(seqLength)];
+    startLogits = List.generate(1, (_) => List.filled(seqLength, 0.0));
+    endLogits = List.generate(1, (_) => List.filled(seqLength, 0.0));
 
     outputMap = {
-      0: startLogits,
-      1: endLogits,
+      0: endLogits,
+      1: startLogits,
     };
 
     final content = await rootBundle.loadString('assets/inputs/text.jsonl');
@@ -102,14 +102,15 @@ class QATask implements BenchmarkTask {
   @override
   String postprocess(dynamic inferenceOutput) {
     final pair = inferenceOutput as List;
-    final starts = (pair[0] as List)[0] as List<double>;
-    final ends = (pair[1] as List)[0] as List<double>;
+    final starts = (pair[0] as List)[0] as List;
+    final ends = (pair[1] as List)[0] as List;
 
     int bestStart = 0;
     double maxStartVal = double.negativeInfinity;
     for (int i = 0; i < starts.length; i++) {
-      if (starts[i] > maxStartVal) {
-        maxStartVal = starts[i];
+      final v = (starts[i] as num).toDouble();
+      if (v > maxStartVal) {
+        maxStartVal = v;
         bestStart = i;
       }
     }
@@ -117,8 +118,9 @@ class QATask implements BenchmarkTask {
     int bestEnd = bestStart;
     double maxEndVal = double.negativeInfinity;
     for (int i = bestStart; i < ends.length; i++) {
-      if (ends[i] > maxEndVal) {
-        maxEndVal = ends[i];
+      final v = (ends[i] as num).toDouble();
+      if (v > maxEndVal) {
+        maxEndVal = v;
         bestEnd = i;
       }
     }

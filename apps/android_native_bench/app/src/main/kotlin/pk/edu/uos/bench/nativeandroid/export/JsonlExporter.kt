@@ -50,12 +50,18 @@ class JsonlExporter(
 
     fun flushToFile(): File {
         val today = fileDateFormat.format(Date())
-        val deviceId = "dev-${Build.MANUFACTURER.lowercase().replace(" ", "-")}-${Build.MODEL.lowercase().replace(" ", "-")}"
+        val mfr = Build.MANUFACTURER.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
+        val rawModel = Build.MODEL.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
+        val cleanModel = if (rawModel.startsWith(mfr)) rawModel.removePrefix(mfr).trim('-') else rawModel
+        val deviceId = "dev-$mfr-$cleanModel"
         val fileName = "${today}_${config.platform}_${config.modelId}_${config.precision}_${config.delegate}_s%02d.jsonl".format(config.session)
 
         val outDir = File(context.getExternalFilesDir(null), "results")
         outDir.mkdirs()
         val outFile = File(outDir, fileName)
+
+        val spec = BenchmarkRegistry.getModelSpec(config.modelId)
+        val modelSha256 = if (config.precision == "int8") spec.int8Sha256 else spec.fp32Sha256
 
         FileWriter(outFile, true).use { writer ->
             for (r in records) {
@@ -74,15 +80,16 @@ class JsonlExporter(
                     put("runtime", "litert")
                     put("runtime_version", "2.16.1")
                     put("model_id", config.modelId)
+                    put("model_sha256", modelSha256)
                     put("precision", config.precision)
                     put("delegate", config.delegate)
-                    put("cpu_threads", config.threads)
+                    put("threads", config.threads)
                     put("session", r.session)
                     put("run_id", r.runId)
                     put("phase", r.phase)
 
-                    if (r.iteration != null) put("iteration", r.iteration)
-                    if (r.inputIndex != null) put("input_index", r.inputIndex)
+                    put("iteration", r.iteration ?: 0)
+                    put("input_index", r.inputIndex ?: 0)
                     put("status", r.status)
                     if (r.errorMessage != null) put("error_message", r.errorMessage)
 

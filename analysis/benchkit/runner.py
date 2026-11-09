@@ -7,15 +7,17 @@ result extraction, and validation conforming to protocol v0.3.0.
 from __future__ import annotations
 
 import os
+import queue
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Any
 
 from . import RAW_DIR
-from .validate import validate_file
+from .validate import load_validator, validate_file
 
 NATIVE_PKG = "pk.edu.uos.bench.nativeandroid"
 NATIVE_ACT = "pk.edu.uos.bench.nativeandroid/.ui.MainActivity"
@@ -74,12 +76,16 @@ def get_connected_devices() -> list[dict[str, str]]:
 
 def inspect_device(serial: str | None = None) -> dict[str, Any]:
     """Extract hardware and OS properties to register device in docs/04-device-matrix.md."""
+    import re
+
     def prop(name: str) -> str:
         r = run_adb(["shell", "getprop", name], device_serial=serial, check=False)
         return r.stdout.strip()
 
-    brand = prop("ro.product.brand").lower()
-    model = prop("ro.product.model").replace(" ", "-").lower()
+    brand = re.sub(r"[^a-z0-9]+", "-", prop("ro.product.brand").lower()).strip("-")
+    raw_model = re.sub(r"[^a-z0-9]+", "-", prop("ro.product.model").lower()).strip("-")
+    clean_model = raw_model[len(brand):].strip("-") if raw_model.startswith(brand) else raw_model
+    dev_id = f"dev-{brand}-{clean_model}"
     soc = prop("ro.soc.model") or prop("ro.board.platform")
     release = prop("ro.build.version.release")
     sdk = prop("ro.build.version.sdk")
@@ -93,11 +99,10 @@ def inspect_device(serial: str | None = None) -> dict[str, Any]:
             total_ram_gb = f"{round(kb / (1024 * 1024), 1)} GB"
             break
 
-    dev_id = f"dev-{brand}-{model}"
     return {
         "device_id": dev_id,
         "brand": brand,
-        "model": model,
+        "model": clean_model,
         "soc": soc,
         "ram": total_ram_gb,
         "os": f"Android {release} (API {sdk})",
@@ -184,14 +189,39 @@ def run_single_app(pkg: str, act: str, session: int, serial: str | None = None) 
     cmd.extend(["logcat", "-s", "BENCH:I"])
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
+
+    def _stream(p: subprocess.Popen[str], q: queue.Queue[str]) -> None:
+        try:
+            assert p.stdout is not None
+            for line in p.stdout:
+                q.put(line)
+        except Exception:
+            pass
+
+    log_q: queue.Queue[str] = queue.Queue()
+    t = threading.Thread(target=_stream, args=(proc, log_q), daemon=True)
+    t.start()
+
+    last_log_time = time.time()
     try:
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            sys.stdout.write(line)
-            sys.stdout.flush()
-            if "Session" in line and ("Completed" in line or "Finished" in line):
-                print(f"[DONE] Completion signal observed for {pkg}.")
-                break
+        while True:
+            try:
+                line = log_q.get(timeout=2.0)
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                last_log_time = time.time()
+                if "Session" in line and ("Completed" in line or "Finished" in line):
+                    print(f"[DONE] Completion signal observed for {pkg}.")
+                    break
+            except queue.Empty:
+                # Check if process is still alive on device
+                res = run_adb(["shell", "pidof", pkg], device_serial=serial, check=False)
+                if not res.stdout.strip():
+                    print(f"\n[INFO] Process {pkg} exited on device.")
+                    break
+                if time.time() - last_log_time > 300:
+                    print(f"\n[WARN] Watchdog timeout: 5 minutes idle for {pkg}.")
+                    break
     finally:
         proc.kill()
 
@@ -201,9 +231,19 @@ def pull_results(pkg: str, device_id: str, serial: str | None = None) -> list[Pa
     dest_dir = RAW_DIR / device_id
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    dev_results_path = f"/sdcard/Android/data/{pkg}/files/results/"
-    print(f"\n[PULL] Pulling results from {dev_results_path} -> {dest_dir}...")
-    run_adb(["pull", dev_results_path, str(dest_dir.resolve())], device_serial=serial, check=False)
+    dev_results_dir = f"/sdcard/Android/data/{pkg}/files/results"
+    print(f"\n[PULL] Pulling results from {dev_results_dir}/. -> {dest_dir}...")
+    run_adb(["pull", f"{dev_results_dir}/.", str(dest_dir.resolve())], device_serial=serial, check=False)
+
+    # Flatten if ADB created a nested results folder
+    nested = dest_dir / "results"
+    if nested.is_dir():
+        for f in nested.glob("*.jsonl"):
+            target = dest_dir / f.name
+            if target.exists():
+                target.unlink()
+            f.rename(target)
+        shutil.rmtree(nested, ignore_errors=True)
 
     pulled = list(dest_dir.glob("*.jsonl"))
     print(f"[PULL] {len(pulled)} JSONL result files present in {dest_dir}.")
@@ -237,8 +277,9 @@ def run_session(session: int, device_id: str, serial: str | None = None) -> None
     if not all_files:
         all_files = list((RAW_DIR / device_id).glob("*.jsonl"))
 
+    validator = load_validator()
     for f in all_files:
-        report = validate_file(f)
+        report = validate_file(f, validator)
         status = "OK" if report.ok else "FAIL"
         print(f"[{status}] {f.name} ({report.n_records} records)")
         if report.ok:

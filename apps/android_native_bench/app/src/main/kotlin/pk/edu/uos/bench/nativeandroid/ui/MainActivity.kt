@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
 
         scope.launch(Dispatchers.IO) {
             val runner = BenchmarkRunner(applicationContext) { logLine ->
+                android.util.Log.i("BENCH", logLine)
                 scope.launch(Dispatchers.Main) {
                     binding.tvDetails.append("$logLine\n")
                 }
@@ -86,11 +87,17 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     binding.tvStatus.text = "Running: ${cfg.modelId} (${cfg.precision}, ${cfg.delegate})"
                 }
-                runner.runConfiguration(cfg)
+                try {
+                    runner.runConfiguration(cfg)
+                } catch (e: Exception) {
+                    android.util.Log.e("BENCH", "Configuration failed: ${cfg.modelId} (${cfg.precision}, ${cfg.delegate}): ${e.message}", e)
+                }
             }
 
             withContext(Dispatchers.Main) {
-                binding.tvStatus.text = "Status: Session $session Completed!"
+                val completionMsg = "Status: Session $session Completed!"
+                android.util.Log.i("BENCH", completionMsg)
+                binding.tvStatus.text = completionMsg
                 binding.btnStart.isEnabled = true
                 if (intent.getBooleanExtra("autorun", false)) {
                     finish()

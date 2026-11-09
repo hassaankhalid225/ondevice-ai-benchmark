@@ -3,6 +3,40 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-09: Multi-Session Benchmark Campaign (Session 3 Flutter Integration & Dataset Expansion to 6,513 Records)
+
+### Added
+- Session 3 Flutter Suite Completion: executed, pulled, and verified all 18 configurations of Flutter for Session 3 on `dev-infinix-x650c` under protocol v0.3.0 and ADR-0007 (odd session order: Flutter first).
+- Empirical Dataset Expansion: dataset expanded from 5,305 records (69 files) to **6,513 valid empirical records** across **87 raw JSONL files** in `data/raw/dev-infinix-x650c/`.
+- Schema Validation Parity: all 87 raw files (100%) pass strict validation against `benchmark-spec/result-schema.json` v1.1.
+- Re-computed Statistical Comparisons (`data/processed/comparisons.csv`): updated 48 cross-platform comparisons with Session 3 Flutter medians; confirmed GPU pure inference parity with Cliff's $\delta = +0.00$ on all models.
+- Re-generated Publication Artifacts: re-rendered all 4 publication PDF figures in `paper/figures/` and updated LaTeX tables in `paper/tables/`.
+
+### Changed
+- `docs/PROGRESS.md`: updated live tracking for Session 3 execution and empirical dataset metrics (87 files, 6,513 records).
+- `experiments/EXP-001.md`: documented Session 3 Flutter execution and updated analysis pipeline logs.
+
+## 2026-11-09: Physical Hardware Connection, Session 1 Execution, Harness Hardening, and Real Empirical Dataset
+
+### Added
+- Physical Device Registration: registered `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek MT6765 Helio P22 octa-core, 3.7 GB RAM, Android 9 / API 28) in `docs/04-device-matrix.md` under `tier: low`.
+- First Real Empirical Dataset (`data/raw/dev-infinix-x650c/`): extracted 33 raw JSONL benchmark files from real on-device execution (18 Native Android + 15 Flutter), totaling 2,413 validated measurement records.
+- First Processed Summary Dataset (`data/processed/summary.csv`): generated 160 metric summary rows computing medians, IQR, and percentiles across latency, memory PSS, and CPU metrics.
+- Parity Validation: verified identical output digest (`qa:5-5`) across Flutter and Native Android for MobileBERT QA on prompt 0.
+
+### Fixed
+- Multidimensional LiteRT Tensor Mapping:
+  - `ClassificationTask` (Kotlin): fixed INT8 output buffer shape from 1D `ByteArray(1001)` to 2D `Array(1) { ByteArray(1001) }` to match LiteRT tensor output shape `[1, 1001]`.
+  - `DetectionTask` (Kotlin & Dart): fixed input buffer allocation to always use 4 bytes per channel (`Float32`) for both FP32 and INT8 EfficientDet-Lite0 models, matching the flatbuffer model's float input tensor `serving_default_input_tensor:0` (1,228,800 bytes).
+  - `DetectionTask` & `ClassificationTask` (Dart): replaced typed `Float32List` nested outputs with standard `List.filled(..., 0.0)` to eliminate Dart runtime cast exception (`List<double> is not a subtype of Float32List`).
+- Flutter UI Thread Freezing: inserted event-loop microtick yields (`await Future.delayed(Duration.zero)`) between warmup and measure iterations in `BenchmarkRunner`, allowing the Flutter rendering engine to pump frames and preventing Android window manager ANR / blank screen issues.
+- Result Schema v1.1 Alignment: updated both Kotlin and Dart exporters to emit `threads` (replacing legacy `cpu_threads`), populate `model_sha256`, and supply fallback `iteration: 0, input_index: 0` for error records.
+- Process Watchdog & Auto-Exit: added process liveness polling (`pidof`) and idle timeout safety to `analysis/benchkit/runner.py`, preventing runner deadlocks if an app terminates or completes headless autorun.
+
+### Changed
+- `experiments/EXP-001.md`: updated with device specifications, empirical observations, and preliminary findings from Session 1.
+- `docs/PROGRESS.md`: marked Session 1 complete and registered transition to multi-session execution.
+
 ## 2026-11-09: End-to-End Build Verification, Release APK Assembly, and ADB Automation Tooling
 
 ### Added

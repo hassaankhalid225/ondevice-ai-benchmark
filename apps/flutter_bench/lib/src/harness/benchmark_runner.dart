@@ -171,6 +171,7 @@ class BenchmarkRunner {
             outputDigest: res,
           ),
         );
+        await Future.delayed(Duration.zero);
       }
 
       // 6. Measured iterations (100)
@@ -213,9 +214,22 @@ class BenchmarkRunner {
             outputDigest: res,
           ),
         );
+        await Future.delayed(Duration.zero);
       }
 
       onLog?.call('[DONE] Finished ${config.modelId} (${config.precision}, ${config.delegate})');
+    } catch (e) {
+      final err = 'Inference execution failed: $e';
+      onLog?.call('[ERROR] $err');
+      exporter.addRecord(
+        BenchmarkRecord(
+          session: config.session,
+          runId: runId,
+          phase: 'measure',
+          status: 'error',
+          errorMessage: err,
+        ),
+      );
     } finally {
       interpreter.close();
     }

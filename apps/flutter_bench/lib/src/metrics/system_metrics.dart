@@ -65,5 +65,26 @@ class SystemMetrics {
       return 34;
     }
   }
+
+  static Future<Map<String, dynamic>> getIntentExtras() async {
+    try {
+      final res = await _channel.invokeMapMethod<String, dynamic>('getIntentExtras');
+      return res ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  static Future<void> log(String message) async {
+    try {
+      await _channel.invokeMethod('log', {'message': message});
+    } catch (_) {}
+  }
+
+  static Future<void> finish() async {
+    try {
+      await _channel.invokeMethod('finish');
+    } catch (_) {}
+  }
 }
 
