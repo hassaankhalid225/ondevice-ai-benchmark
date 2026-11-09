@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this benchmark suite, please cite it as below."
+title: "On-Device AI Benchmark: Flutter vs Native"
+authors:
+  - family-names: Khalid
+    given-names: Hassaan
+    affiliation: "Department of Software Engineering, University of Sargodha"
+version: 0.1.0
+date-released: 2026-11-09
+license: MIT
+keywords:
+  - on-device inference
+  - edge AI
+  - Flutter
+  - cross-platform mobile development
+  - LiteRT
+  - TensorFlow Lite
+  - benchmarking

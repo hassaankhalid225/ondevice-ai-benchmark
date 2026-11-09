@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.jsonl text eol=lf
+*.pdf binary
+*.png binary
+*.tflite binary

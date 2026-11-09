@@ -1,0 +1,58 @@
+# --- models (binaries are fetched/converted, never committed) ---
+*.tflite
+**/*.tflite
+models/**/*.onnx
+models/**/*.pt
+models/**/*.h5
+models/cache/
+
+# --- processed data is regenerated ---
+data/processed/*
+!data/processed/.gitkeep
+
+# --- python ---
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.ipynb_checkpoints/
+
+# --- latex build ---
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/main.pdf
+
+# --- flutter / dart ---
+apps/flutter_bench/.dart_tool/
+apps/flutter_bench/build/
+apps/flutter_bench/.flutter-plugins*
+apps/flutter_bench/.packages
+
+# --- android ---
+apps/android_native_bench/.gradle/
+apps/android_native_bench/build/
+apps/android_native_bench/app/build/
+apps/android_native_bench/local.properties
+*.jks
+*.keystore
+
+# --- ios ---
+apps/ios_native_bench/Pods/
+apps/ios_native_bench/build/
+*.xcuserstate
+xcuserdata/
+
+# --- secrets / os ---
+.env
+.env.*
+.DS_Store
+Thumbs.db
+desktop.ini
