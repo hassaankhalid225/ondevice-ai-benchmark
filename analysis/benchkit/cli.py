@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from . import EXCLUSIONS_PATH, FIGURES_DIR, PROCESSED_DIR, PROTOCOL_PATH, RAW_DI
 from .compare import compare_all
 from .figures import make_all
 from .io import apply_exclusions, load_exclusions, load_raw
+from .runner import get_connected_devices, inspect_device, install_apks, preflight_check, run_session
 from .summarize import summarize
 from .validate import validate_tree
 
@@ -76,6 +78,39 @@ def cmd_figures(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_devices(args: argparse.Namespace) -> int:
+    devices = get_connected_devices()
+    if not devices:
+        print("No ADB devices connected.")
+        return 0
+    print(f"Connected devices ({len(devices)}):")
+    for d in devices:
+        print(f"  - Serial: {d['serial']} ({d['state']}) | {d['info']}")
+        try:
+            info = inspect_device(d['serial'])
+            print(f"    Suggested ID: {info['device_id']}")
+            print(f"    Hardware: SoC={info['soc']}, RAM={info['ram']}, OS={info['os']}")
+            print(f"    Markdown Row: | `{info['device_id']}` | <tier> | {info['model']} | {info['soc']} | {info['ram']} | {info['os']} | Hassaan | ready |")
+        except (RuntimeError, subprocess.SubprocessError, KeyError, OSError) as e:
+            print(f"    Inspection failed: {e}")
+    return 0
+
+
+def cmd_install(args: argparse.Namespace) -> int:
+    install_apks(serial=args.serial)
+    return 0
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    ok = preflight_check(serial=args.serial)
+    return 0 if ok else 1
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    run_session(session=args.session, device_id=args.device, serial=args.serial)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="benchkit", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -101,6 +136,24 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--figures", default=str(FIGURES_DIR))
     f.add_argument("--tables", default=str(TABLES_DIR))
     f.set_defaults(func=cmd_figures)
+
+    dev = sub.add_parser("devices", help="list and inspect connected ADB devices")
+    dev.set_defaults(func=cmd_devices)
+
+    chk = sub.add_parser("check", help="pre-flight device environment check")
+    chk.add_argument("--serial", "-s", default=None, help="device serial")
+    chk.set_defaults(func=cmd_check)
+
+    inst = sub.add_parser("install", help="deploy release APKs to connected device")
+    inst.add_argument("--serial", "-s", default=None, help="device serial")
+    inst.set_defaults(func=cmd_install)
+
+    r = sub.add_parser("run", help="orchestrate automated experiment session on device")
+    r.add_argument("--device", "-d", required=True, help="registered device_id (e.g. dev-samsung-a14)")
+    r.add_argument("--session", "-k", type=int, default=1, help="session index (1..8)")
+    r.add_argument("--serial", "-s", default=None, help="device serial")
+    r.set_defaults(func=cmd_run)
+
     return p
 
 
