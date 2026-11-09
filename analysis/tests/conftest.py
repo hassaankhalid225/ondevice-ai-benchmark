@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # make `benchkit` 
 
 def _record(**kw) -> dict:
     base = {
-        "schema_version": "1.0", "protocol_version": "0.1.0", "synthetic": True,
+        "schema_version": "1.1", "protocol_version": "0.3.0", "synthetic": True,
         "timestamp_utc": "2026-11-09T10:00:00Z", "device_id": "dev-test-phone", "os": "android",
         "os_version": "14", "api_level": 34, "app_version": "0.0.0-test", "build_mode": "release",
         "runtime": "litert", "runtime_version": "0.0.0", "model_id": "mobilenetv3_large",
@@ -39,10 +39,12 @@ def write_session(dirpath: Path, platform: str, session: int, *, inf_scale: floa
     for i in range(n):
         phase = "warmup" if i < 5 else "measure"
         pre = float(rng.lognormal(np.log(4 * pre_scale), 0.1))
-        inf = float(rng.lognormal(np.log(10 * inf_scale), 0.1))
+        native = float(rng.lognormal(np.log(10 * inf_scale), 0.1))
+        inf = native + float(rng.lognormal(np.log(0.2 * pre_scale), 0.1))  # boundary scales with pre_scale
         post = float(rng.lognormal(np.log(0.5), 0.1))
         recs.append(_record(platform=platform, session=session, run_id=run_id, phase=phase, iteration=i,
-                            input_index=i % 50, preprocess_ms=pre, inference_ms=inf, postprocess_ms=post,
+                            input_index=i % 50, preprocess_ms=pre, inference_ms=inf,
+                            inference_native_ms=native, postprocess_ms=post,
                             end_to_end_ms=pre + inf + post + 0.2, pss_mb=120.0 * pre_scale,
                             cpu_pct=180.0, output_digest="cls:1"))
     path = dirpath / "dev-test-phone" / f"20261109_{platform}_mobilenetv3_large_fp32_cpu_s{session:02d}.jsonl"

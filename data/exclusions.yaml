@@ -1,0 +1,9 @@
+# Sessions excluded from the main analysis. Raw files stay in data/raw/ untouched.
+# Each entry: run_id (or file path), reason, decided_by, date, experiment.
+exclusions: []
+#  - run_id: "3f2a…"
+#    file: data/raw/dev-samsung-a14/20261220_flutter_mobilenetv3_large_fp32_cpu_s03.jsonl
+#    reason: "thermal_status reached severe at iteration 64"
+#    decided_by: hassaan
+#    date: 2026-12-20
+#    experiment: EXP-002

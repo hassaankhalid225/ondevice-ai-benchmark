@@ -22,7 +22,9 @@ CONFIG_KEYS = ["device_id", "os", "model_id", "precision", "delegate"]
 
 # Metric -> research-question family (Holm correction is applied within each family).
 METRIC_FAMILIES: dict[str, str] = {
-    "inference_ms": "RQ1",
+    "inference_native_ms": "RQ1",
+    "inference_ms": "RQ2",
+    "boundary_overhead_ms": "RQ2",
     "preprocess_ms": "RQ2",
     "postprocess_ms": "RQ2",
     "end_to_end_ms": "RQ2",

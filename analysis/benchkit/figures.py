@@ -15,8 +15,8 @@ IEEE_COL_IN = 3.5
 IEEE_DBL_IN = 7.16
 # Okabe-Ito colour-blind-safe palette
 PALETTE = {"flutter": "#0072B2", "android_native": "#D55E00", "ios_native": "#009E73"}
-STAGES = ["preprocess_ms", "inference_ms", "postprocess_ms"]
-STAGE_COLORS = ["#56B4E9", "#E69F00", "#CC79A7"]
+STAGES = ["preprocess_ms", "boundary_overhead_ms", "inference_native_ms", "postprocess_ms"]
+STAGE_COLORS = ["#56B4E9", "#009E73", "#E69F00", "#CC79A7"]
 
 
 def _style() -> None:
@@ -71,7 +71,7 @@ def stage_decomposition(summary: pd.DataFrame, out: Path) -> Path | None:
         bottom += piv[stage].to_numpy()
     ax.set_xticks(range(len(piv)), labels, rotation=90)
     ax.set_ylabel("Median time (ms)")
-    ax.legend(frameon=False, ncols=3)
+    ax.legend(frameon=False, ncols=len(STAGES))
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out)
     plt.close(fig)
@@ -100,12 +100,12 @@ def comparisons_table(comparisons: pd.DataFrame, metric: str, out: Path) -> Path
 
 def make_all(summary: pd.DataFrame, comparisons: pd.DataFrame, figures_dir: Path, tables_dir: Path) -> list[Path]:
     produced: list[Path | None] = [
-        ratio_forest(comparisons, "inference_ms", figures_dir / "rq1-inference-ratio.pdf"),
+        ratio_forest(comparisons, "inference_native_ms", figures_dir / "rq1-inference-ratio.pdf"),
         ratio_forest(comparisons, "end_to_end_ms", figures_dir / "rq2-e2e-ratio.pdf"),
         stage_decomposition(summary, figures_dir / "rq2-stage-decomposition.pdf"),
         ratio_forest(comparisons, "pss_mb", figures_dir / "rq3-memory-ratio.pdf"),
         ratio_forest(comparisons, "cold_start_ms", figures_dir / "rq5-coldstart-ratio.pdf"),
-        comparisons_table(comparisons, "inference_ms", tables_dir / "rq1-inference.tex"),
+        comparisons_table(comparisons, "inference_native_ms", tables_dir / "rq1-inference.tex"),
         comparisons_table(comparisons, "end_to_end_ms", tables_dir / "rq2-e2e.tex"),
     ]
     return [p for p in produced if p is not None]

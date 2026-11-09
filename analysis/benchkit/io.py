@@ -28,6 +28,16 @@ def read_jsonl(path: Path) -> list[dict]:
     return records
 
 
+def add_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    """Add ``boundary_overhead_ms`` and ``timer_residual_ms`` (ADR-0006). Values are not clipped."""
+    if "inference_native_ms" in df.columns and "inference_ms" in df.columns:
+        df["boundary_overhead_ms"] = df["inference_ms"] - df["inference_native_ms"]
+    stages = ["preprocess_ms", "inference_ms", "postprocess_ms"]
+    if "end_to_end_ms" in df.columns and all(s in df.columns for s in stages):
+        df["timer_residual_ms"] = df["end_to_end_ms"] - df[stages].sum(axis=1, skipna=False)
+    return df
+
+
 def load_raw(root: Path) -> pd.DataFrame:
     """Load all records under ``root`` into one DataFrame with a ``source_file`` column."""
     frames = []
@@ -39,7 +49,7 @@ def load_raw(root: Path) -> pd.DataFrame:
             frames.append(df)
     if not frames:
         return pd.DataFrame()
-    return pd.concat(frames, ignore_index=True)
+    return add_derived_metrics(pd.concat(frames, ignore_index=True))
 
 
 def load_exclusions(path: Path = EXCLUSIONS_PATH) -> list[dict]:

@@ -36,16 +36,39 @@ def test_end_to_end_pipeline_recovers_constructed_effects(synthetic_raw, tmp_pat
 
     comp = compare_all(df, resamples=500).set_index("metric")
     # constructed: identical inference, 2x preprocessing
+    assert comp.loc["inference_native_ms", "family"] == "RQ1"
+    assert not comp.loc["inference_native_ms", "practical"]
     assert not comp.loc["inference_ms", "practical"]
+    assert 1.7 < comp.loc["boundary_overhead_ms", "ratio"] < 2.3
     assert comp.loc["preprocess_ms", "practical"]
     assert 1.8 < comp.loc["preprocess_ms", "ratio"] < 2.2
-    assert comp.loc["preprocess_ms", "session_median_ratio"] > 1.8
+    assert comp.loc["preprocess_ms", "iteration_median_ratio"] > 1.8
+    # unit of analysis is the session (ADR-0007): 3 sessions, so p cannot reach significance
+    assert comp.loc["preprocess_ms", "n_x"] == 3
+    assert not comp.loc["preprocess_ms", "significant"]
     assert "cold_start_ms" in comp.index
 
     produced = make_all(summ, comp.reset_index(), tmp_path / "fig", tmp_path / "tab")
     names = {p.name for p in produced}
     assert {"rq1-inference-ratio.pdf", "rq2-stage-decomposition.pdf", "rq1-inference.tex"} <= names
     assert all(p.stat().st_size > 0 for p in produced)
+
+
+def test_derived_timing_metrics(synthetic_raw):
+    df = load_raw(synthetic_raw)
+    m = df[df.phase == "measure"]
+    assert ((m.inference_ms - m.inference_native_ms - m.boundary_overhead_ms).abs() < 1e-9).all()
+    assert ((m.timer_residual_ms - 0.2).abs() < 1e-9).all()
+
+
+def test_validator_requires_native_inference_time(synthetic_raw):
+    path = next(synthetic_raw.rglob("*.jsonl"))
+    recs = [json.loads(line) for line in path.read_text().splitlines()]
+    for r in recs:
+        r.pop("inference_native_ms", None)
+    path.write_text("\n".join(json.dumps(r) for r in recs) + "\n")
+    rep = validate_file(path, load_validator(), allow_synthetic=True, max_errors=100)
+    assert any("inference_native_ms" in e for e in rep.errors)
 
 
 def test_exclusions_remove_runs(synthetic_raw):

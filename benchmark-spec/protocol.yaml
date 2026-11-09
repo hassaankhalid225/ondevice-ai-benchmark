@@ -1,0 +1,59 @@
+# Machine-readable experimental protocol.
+# Source of truth for both harness apps and the analysis pipeline.
+# Any change → new ADR + bump `version` (semver: MAJOR = incomparable data, MINOR = new configs, PATCH = clarifications).
+version: "0.3.0"                              # 0.3.0: 8 sessions, session-level statistics (ADR-0007)
+
+platforms: [flutter, android_native]          # ios_native optional (ADR-0003)
+
+models:                                         # ids must exist in models/manifest.yaml
+  - mobilenetv3_large
+  - efficientdet_lite0
+  - mobilebert_qa
+
+precisions: [fp32, int8]
+
+delegates: [cpu, gpu, nnapi]
+
+runtime:
+  name: litert
+  cpu_threads: 4
+  xnnpack: true
+
+inputs:
+  vision_set: assets/inputs/vision            # 50 JPEGs, fixed order, bundled in both apps
+  text_set: assets/inputs/text.jsonl          # 50 question/context pairs, fixed order
+  n_inputs: 50
+
+run:
+  cold_start_repeats: 10
+  warmup_iterations: 20
+  measure_iterations: 100
+  sessions_per_config: 8
+  randomise_config_order: true
+  order_seed_base: 20261109                   # session k uses seed base + k
+  cooldown_seconds: 60
+  max_thermal_status_to_start: light
+
+sustained:
+  model: efficientdet_lite0
+  duration_seconds: 300
+  sample_interval_seconds: 1
+
+energy:
+  duration_seconds: 600
+  sample_interval_seconds: 5
+  idle_baseline_seconds: 600
+  device_unplugged: true
+
+exclusion:
+  thermal_status_at_or_above: severe
+
+analysis:
+  unit_of_analysis: session_median            # cold-start metrics: each launch (ADR-0007)
+  alpha: 0.05
+  multiple_comparison: holm
+  bootstrap_resamples: 10000
+  bootstrap_seed: 42
+  practical_effect:
+    min_abs_cliffs_delta: 0.33
+    median_ratio_band: [0.95, 1.05]

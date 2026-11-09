@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hassaankhalid/ondevice-ai-benchmark/benchmark-spec/result-schema.json",
+  "title": "Benchmark iteration record",
+  "description": "One JSON object per line (JSONL). One record = one iteration of one configuration in one session.",
+  "type": "object",
+  "required": [
+    "schema_version", "protocol_version", "run_id", "timestamp_utc",
+    "device_id", "os", "os_version", "platform", "app_version", "build_mode",
+    "runtime", "runtime_version", "model_id", "model_sha256", "precision", "delegate", "threads",
+    "session", "phase", "iteration", "input_index", "status"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.1" },
+    "protocol_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "run_id": { "type": "string", "minLength": 8, "description": "UUID per (session, config)" },
+    "timestamp_utc": { "type": "string", "format": "date-time" },
+    "synthetic": { "type": "boolean", "description": "true ONLY for test fixtures. Must be absent/false in data/raw." },
+
+    "device_id": { "type": "string", "pattern": "^dev-[a-z0-9-]+$" },
+    "os": { "enum": ["android", "ios"] },
+    "os_version": { "type": "string" },
+    "api_level": { "type": ["integer", "null"] },
+    "soc": { "type": ["string", "null"] },
+
+    "platform": { "enum": ["flutter", "android_native", "ios_native"] },
+    "app_version": { "type": "string" },
+    "framework_version": { "type": ["string", "null"], "description": "Flutter SDK version, or null for native" },
+    "plugin_version": { "type": ["string", "null"], "description": "tflite_flutter version, or null" },
+    "build_mode": { "enum": ["release", "profile", "debug"] },
+
+    "runtime": { "const": "litert" },
+    "runtime_version": { "type": "string" },
+    "model_id": { "type": "string" },
+    "model_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "precision": { "enum": ["fp32", "fp16", "int8"] },
+    "delegate": { "enum": ["cpu", "gpu", "nnapi", "coreml"] },
+    "threads": { "type": "integer", "minimum": 1 },
+
+    "session": { "type": "integer", "minimum": 1 },
+    "phase": { "enum": ["cold_start", "warmup", "measure", "sustained", "energy", "idle"] },
+    "iteration": { "type": "integer", "minimum": 0 },
+    "input_index": { "type": "integer", "minimum": 0 },
+    "status": { "enum": ["ok", "error", "unsupported"] },
+    "error_message": { "type": ["string", "null"] },
+
+    "preprocess_ms": { "type": ["number", "null"], "minimum": 0 },
+    "inference_ms": { "type": ["number", "null"], "minimum": 0 },
+    "inference_native_ms": { "type": ["number", "null"], "minimum": 0 },
+    "postprocess_ms": { "type": ["number", "null"], "minimum": 0 },
+    "end_to_end_ms": { "type": ["number", "null"], "minimum": 0 },
+    "model_load_ms": { "type": ["number", "null"], "minimum": 0 },
+    "cold_start_ms": { "type": ["number", "null"], "minimum": 0 },
+
+    "pss_mb": { "type": ["number", "null"], "minimum": 0 },
+    "idle_pss_mb": { "type": ["number", "null"], "minimum": 0 },
+    "cpu_pct": { "type": ["number", "null"], "minimum": 0 },
+    "fps": { "type": ["number", "null"], "minimum": 0 },
+    "charge_counter_uah": { "type": ["number", "null"] },
+    "battery_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+    "is_charging": { "type": ["boolean", "null"] },
+    "thermal_status": { "enum": ["none", "light", "moderate", "severe", "critical", "emergency", "shutdown", "unknown", null] },
+
+    "output_digest": { "type": ["string", "null"], "description": "Parity check value (see docs/03-metrics.md)" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "ok" }, "phase": { "enum": ["warmup", "measure"] } } },
+      "then": { "required": ["preprocess_ms", "inference_ms", "inference_native_ms", "postprocess_ms", "end_to_end_ms"] }
+    }
+  ],
+  "additionalProperties": false
+}
