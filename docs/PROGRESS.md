@@ -18,12 +18,24 @@ Phase 1 (Literature Review), Phase 2 (Benchmark Harness Applications for Flutter
   - Alternating execution order verified per ADR-0007.
 - **Session 3 (Odd: Flutter First):**
   - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Native Android: Executed on device up to config 12 before USB disconnect; ready to pull/continue when reconnected.
+  - Native Android: 14 configurations executed and pulled.
+- **Session 4 (Even: Native First):**
+  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
+  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
+- **Session 5 (Odd: Flutter First):**
+  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
+  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
+  - Seed: `20261114` (`20261109L + 5`).
+  - Total records collected to date: **13,620 raw records across 173 files**.
+- **Next to Execute: Session 6 (Even: Native First):**
+  - Order protocol: Native Android first (18 configs), followed by Flutter (18 configs).
+  - Seed: `20261115` (`20261109L + 6`).
+  - Device telemetry: Battery 83% (charging), thermal state normal (31.0°C).
 - **Empirical Dataset Status:**
-  - Raw dataset: **87 JSONL benchmark files** and **6,513 empirical records** in `data/raw/dev-infinix-x650c/`.
-  - Schema validation: **87/87 files (100%) PASS** `benchkit validate` against `benchmark-spec/result-schema.json` v1.1.
-  - Summary aggregation: `data/processed/summary.csv` generated (**192 metric summary rows**).
-  - Multi-session statistical comparisons: `data/processed/comparisons.csv` generated (**48 cross-platform comparisons** computing Mann-Whitney U, Cliff's delta, Holm-adjusted p-values, and bootstrap ratio 95% CIs).
+  - Raw dataset: **173 JSONL benchmark files** in `data/raw/dev-infinix-x650c/`.
+  - Schema validation: **173/173 files (100%) PASS** `benchkit validate` against `benchmark-spec/result-schema.json` v1.1.
+  - Summary aggregation: `data/processed/summary.csv` generated (**192 metric summary rows**, 13,380 valid empirical measurements).
+  - Multi-session statistical comparisons: `data/processed/comparisons.csv` generated (**80 cross-platform comparisons** computing Mann-Whitney U, Cliff's delta, Holm-adjusted p-values, and bootstrap ratio 95% CIs).
   - Publication artifacts: 4 vector figures in `paper/figures/` and 2 LaTeX tables in `paper/tables/`.
   - Research paper: `paper/sections/04-results.tex` fully drafted with empirical findings answering RQ1–RQ5.
 - **Tooling & Harness Hardening:**

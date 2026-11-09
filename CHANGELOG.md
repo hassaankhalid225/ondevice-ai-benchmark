@@ -3,6 +3,19 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-10: Campaign Expansion through Session 5 (173 Raw Files, 13,620 Records Collected, Schema Validated)
+
+### Added
+- Session 4 & Session 5 Execution: executed, pulled, and validated all configurations for Session 4 (even order: Native first) and Session 5 (odd order: Flutter first) on physical device `dev-infinix-x650c` under protocol v0.3.0 and ADR-0007.
+- Dataset Scale: expanded raw empirical dataset from 87 to **173 raw JSONL files** in `data/raw/dev-infinix-x650c/` containing **13,620 total measurement records** (13,380 valid empirical records after excluding 240 hardware clock overflow records in `data/exclusions.yaml`).
+- Schema Parity: **173/173 raw benchmark files (100% PASS)** verified against `benchmark-spec/result-schema.json` v1.1.
+- Statistical Pipeline Re-Run: generated updated `data/processed/summary.csv` (192 rows) and `data/processed/comparisons.csv` (80 cross-platform comparisons with 10,000-resample bootstrap 95% CIs and Holm-Bonferroni adjusted p-values).
+- Vector Publication Figures & Tables: regenerated all 4 publication PDF figures in `paper/figures/` and LaTeX tables in `paper/tables/`.
+
+### Changed
+- `docs/PROGRESS.md`: updated with live status through Session 5 and queued Session 6.
+- `experiments/EXP-001.md`: updated campaign logs with Session 4 and 5 completions and telemetry metrics.
+
 ## 2026-11-09: Multi-Session Benchmark Campaign (Session 3 Flutter Integration & Dataset Expansion to 6,513 Records)
 
 ### Added

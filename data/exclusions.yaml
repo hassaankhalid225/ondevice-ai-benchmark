@@ -6,6 +6,11 @@ exclusions:
     decided_by: hassaan
     date: 2026-11-09
     experiment: EXP-001
+  - file: data/raw/dev-infinix-x650c/20261109_android_native_mobilenetv3_large_fp32_cpu_s03.jsonl
+    reason: "SystemClock elapsedRealtimeNanos overflow resulted in 9223372036854776 ms sentinel reading across iterations"
+    decided_by: hassaan
+    date: 2026-11-09
+    experiment: EXP-001
 
 #  - run_id: "3f2a…"
 #    file: data/raw/dev-samsung-a14/20261220_flutter_mobilenetv3_large_fp32_cpu_s03.jsonl
