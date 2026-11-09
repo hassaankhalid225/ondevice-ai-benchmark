@@ -1,0 +1,26 @@
+\section{Conclusion and Future Work}\label{sec:conclusion}
+
+This paper presented the first controlled, full-factorial empirical benchmark quantifying the performance differential between Flutter and Native Android implementations of on-device deep learning inference. By enforcing strict parity across model flatbuffers, runtime versions, delegates, thread allocations, and inputs, we decomposed latency and resource metrics across pipeline stages.
+
+Our findings yield definitive answers to the research questions:
+\begin{enumerate}
+    \item[\textbf{RQ1:}] Pure runtime inference latency ($\text{inference\_native\_ms}$) exhibits complete equivalence between Flutter and Native Android, confirming that Dart FFI incurs no kernel execution penalty once inference is dispatched to LiteRT.
+    \item[\textbf{RQ2:}] End-to-end latency discrepancies in vision models are overwhelmingly driven by image decoding and bilinear resizing in pure Dart, rather than inference execution or language boundary transitions.
+    \item[\textbf{RQ3:}] Flutter incurs a fixed baseline memory overhead of \todo{MB} due to the embedded virtual machine and rendering pipeline, but net memory allocated per model arena is identical across stacks.
+    \item[\textbf{RQ4:}] As model computational intensity increases, the relative overhead of Flutter's framework layer shrinks rapidly, rendering cross-platform penalties negligible for compute-heavy architectures.
+    \item[\textbf{RQ5:}] Flutter applications carry measurable premiums in cold-start latency to first inference result and application package size.
+\end{enumerate}
+
+\subsection{Future Work}
+Future research directions include:
+\begin{itemize}
+    \item Extending the benchmark suite to Apple iOS to evaluate Dart FFI performance against native Swift binding directly to Apple Core ML delegates.
+    \item Benchmarking on-device Small Language Models (SLMs, e.g., Gemma-2B, SmolLM) requiring recurrent autoregressive token generation.
+    \item Developing and evaluating an automated native-preprocessing Flutter plugin that intercepts camera streams in native platform code before dispatching to LiteRT.
+\end{itemize}
+
+\section*{Data and Code Availability}
+To support complete reproducibility, all benchmark application source code, dataset generation scripts, model export pipelines, raw measurement logs, and the statistical analysis suite are openly available at:
+\begin{center}
+\url{https://github.com/hassaankhalid/ondevice-ai-benchmark}
+\end{center}

@@ -1,0 +1,40 @@
+\section{Discussion and Practitioner Guidelines}\label{sec:discussion}
+
+The empirical findings from our benchmark provide clear answers to long-standing questions regarding cross-platform on-device machine learning efficiency. In this section, we analyze the underlying architectural mechanisms and formulate evidence-based guidelines for mobile software architects.
+
+\subsection{Why Pure Inference Achieves Parity While End-to-End Lags}
+A central finding of this study is the sharp dichotomy between pure kernel execution ($\text{inference\_native\_ms}$) and end-to-end duration ($\text{end\_to\_end\_ms}$). Because `tflite\_flutter` utilizes Dart FFI to invoke the identical C dynamic library (`libtensorflowlite.so`) employed by Native Android, the underlying computational graph, matrix multiplications, and hardware delegate acceleration proceed with zero software penalty once the invoke call is dispatched.
+
+The performance divergence observed in real-world Flutter applications is overwhelmingly an artifact of \textbf{data ingestion and preprocessing}. When mobile software engineers implement on-device deep learning in Flutter using standard package dependencies (e.g., the pure Dart `image` package), image decoding, pixel unpacking, and bilinear interpolation occur within the managed Dart runtime. In contrast, Native Android leverages hardware-accelerated C++ bitmap decoders (`libjpeg-turbo` / Android framework decoders) optimized specifically for mobile ARM SIMD instruction sets.
+
+\subsection{Practitioner Decision Framework}
+Based on our empirical measurements across model scales and hardware tiers, we provide a structured decision matrix in Table~\ref{tab:guidelines} to guide technology stack selection.
+
+\begin{table*}[t]
+\caption{Practitioner Guidelines: Technology Stack Decision Matrix}
+\label{tab:guidelines}
+\centering
+\begin{tabular}{p{3.5cm}p{3.5cm}p{4cm}p{4.5cm}}
+\toprule
+\textbf{Workload Characteristics} & \textbf{Examples} & \textbf{Recommended Stack} & \textbf{Architectural Justification} \\
+\midrule
+\textbf{Batch / Asynchronous Inference} & Document scanning, photo classification on upload, offline speech-to-text & \textbf{Standard Flutter} & Pure inference parity holds; 10--30\,ms preprocessing overhead is imperceptible in asynchronous user flows. Codebase reuse provides massive ROI. \\
+\addlinespace
+\textbf{Textual / NLP Workloads} & SQuAD QA, mobile sentiment analysis, named entity recognition & \textbf{Standard Flutter} & WordPiece/BPE tokenization is computationally lightweight; no vision image decoding penalty; latency gap is statistically indistinguishable from native. \\
+\addlinespace
+\textbf{Real-Time Camera Streams (30--60 FPS)} & Live object tracking, continuous facial landmarking, augmented reality & \textbf{Hybrid Flutter (Native Preprocessing Plugin)} & Pure Dart image decoding cannot sustain 30 FPS. Offloading camera frame buffer extraction and resizing to a platform channel or native C shim restores native frame rates. \\
+\addlinespace
+\textbf{Ultra-Low-Memory / Budget Devices} & Entry-tier Android devices ($\le 2$\,GB RAM, Android Go) & \textbf{Native Android (Kotlin)} & Flutter's baseline virtual machine and rendering engine RAM footprint (\todo{MB}) limits headroom on low-memory devices. \\
+\addlinespace
+\textbf{Sub-10\,ms Hard Real-Time Budgets} & Industrial sensor anomaly detection, real-time audio filtering & \textbf{Native Android (C++ / Kotlin)} & Eliminates all Dart FFI boundary marshalling and garbage collection pauses. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Actionable Recommendations for Flutter Developers}
+For teams building production AI-powered applications in Flutter, our findings suggest three concrete optimizations:
+\begin{enumerate}
+    \item \textbf{Decouple Image Preprocessing from Dart:} For camera-driven vision models, developers should avoid decoding full-resolution camera frames in Dart. Utilizing camera plugins that expose direct YUV/NV21 native buffers and performing resizing via native Android/iOS native bindings eliminates over 80\% of the Flutter latency gap.
+    \item \textbf{Prioritize INT8 Quantization:} In addition to reducing model size and enabling NPU acceleration, INT8 quantization reduces input and output tensor byte volumes by $75\%$, directly minimizing the memory copying cost across the Dart FFI boundary.
+    \item \textbf{Avoid Main-Isolate Blocking:} While our primary study benchmarks the standard main-isolate developer path, compute-intensive preprocessing should be isolated within a background Dart worker isolate (`compute()`) in production to prevent UI frame drops.
+\end{enumerate}
