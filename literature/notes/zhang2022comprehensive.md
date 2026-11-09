@@ -28,3 +28,4 @@ Evaluated six representative mobile deep learning libraries across 10 mobile dev
 
 ## Quotable claim
 > Mobile deep learning library performance is heavily fragmented; however, existing benchmarks evaluate runtimes strictly through native testbeds, overlooking the substantial cross-platform application wrappers that drive real-world app deployment.
+

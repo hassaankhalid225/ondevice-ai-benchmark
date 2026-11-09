@@ -31,3 +31,4 @@ Presents the MLPerf Mobile benchmark suite—an industry-standard, open-source b
 
 ## Quotable claim
 > While MLPerf Mobile establishes rigorous standards for mobile hardware benchmarking, it abstracts away application-level software stacks, leaving open the question of how cross-platform frameworks influence the end-to-end user experience of on-device AI.
+

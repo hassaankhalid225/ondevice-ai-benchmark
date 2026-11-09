@@ -127,3 +127,4 @@ if __name__ == "__main__":
     base = Path(__file__).resolve().parents[2]
     generate_vision_inputs(base / "assets" / "inputs" / "vision", 50)
     generate_text_inputs(base / "assets" / "inputs" / "text.jsonl", 50)
+

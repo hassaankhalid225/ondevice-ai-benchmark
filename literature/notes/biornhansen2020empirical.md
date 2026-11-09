@@ -30,3 +30,4 @@ Conducted a controlled empirical evaluation of cross-platform frameworks (includ
 
 ## Quotable claim
 > While cross-platform frameworks like Flutter achieve near-native UI responsiveness through AOT compilation, empirical analysis demonstrates measurable resource premiums in memory footprint and binary size, leaving hardware-accelerated machine learning workloads uncharacterized.
+

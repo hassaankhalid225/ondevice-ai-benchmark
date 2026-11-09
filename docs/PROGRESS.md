@@ -7,18 +7,21 @@
 
 ## Current focus
 Phase 1 (Literature Review) and Phase 2 (Benchmark Harness Applications for Flutter and Android Native)
-are complete. All 6 LiteRT flatbuffer models (FP32 & INT8) are generated, verified, and pinned in `models/manifest.yaml`.
-The 50 canonical vision and 50 text inputs are generated and synchronized. Both harness apps compile cleanly
-with zero lint issues. All paper sections (Abstract, Introduction, Related Work, Methodology, Discussion,
-Threats, Conclusion) have been drafted to high IEEE academic standards. Focus now shifts to registering physical
-devices and running the initial pilot campaign (EXP-001).
+are complete and fully verified. Both release APKs have been built and verified on disk:
+- Android Native: `apps/android_native_bench/app/build/outputs/apk/release/app-release.apk` (65.6 MB, R8 minified)
+- Flutter: `apps/flutter_bench/build/app/outputs/flutter-apk/app-release.apk` (118.2 MB, AOT release)
+All 6 LiteRT flatbuffer models (FP32 & INT8) are verified with cryptographic SHA-256 digests.
+An automated ADB runner (`analysis/benchkit/runner.py`) has been added to orchestrate pre-flight checks,
+APK deployment, headless execution, data extraction, and schema validation. Analysis test suite has 21 passing tests (100% clean).
+`experiments/EXP-001.md` is authored and ready for execution.
 
 ## Next actions (in order)
-1. [ ] Connect a physical Android device via USB, enable Developer Options/USB Debugging, and register device specifications in `docs/04-device-matrix.md`.
-2. [ ] Build and install release APKs on the connected device (`apps/android_native_bench` and `apps/flutter_bench`).
-3. [ ] Execute pilot campaign EXP-001 (Session 1), pull exported JSONL result files to `data/raw/<device_id>/`.
-4. [ ] Run `python -m benchkit validate data/raw` and `python -m benchkit summarize data/raw` to verify schema compliance and stage timings.
-5. [ ] Ask the university department whether the mandatory paper requires a designated supervisor and verify format requirements.
+1. [ ] Connect a physical Android device via USB with USB Debugging enabled.
+2. [ ] Run `python -m benchkit devices` to inspect hardware properties and copy row into `docs/04-device-matrix.md`.
+3. [ ] Run `python -m benchkit install` to deploy both release APKs to the device.
+4. [ ] Run `python -m benchkit run --device <device_id> --session 1` to execute Session 1 of pilot campaign EXP-001.
+5. [ ] Run `python -m benchkit validate data/raw` and `python -m benchkit summarize data/raw` to verify schema compliance and stage timings.
+6. [ ] Ask the university department whether the mandatory paper requires a designated supervisor and verify format requirements.
 
 ## Phase checklist
 - [x] Phase 0 · Setup (2026-11-09)

@@ -3,6 +3,27 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-09: End-to-End Build Verification, Release APK Assembly, and ADB Automation Tooling
+
+### Added
+- Android Native Release Build: successfully compiled, minified, and verified release APK `apps/android_native_bench/app/build/outputs/apk/release/app-release.apk` (65.6 MB) via Gradle 8.14 and R8 shrinker.
+- Flutter Release Build: successfully compiled Ahead-Of-Time release APK `apps/flutter_bench/build/app/outputs/flutter-apk/app-release.apk` (118.2 MB) via AGP 8.6.0, Compile SDK 36, NDK 28.2.13676358, and Gradle 8.14.
+- Experiment Orchestrator (`analysis/benchkit/runner.py`): automated ADB-based runner supporting device hardware inspection, battery/thermal pre-flight checks, APK deployment, alternating cross-platform execution (odd sessions Flutter first, even sessions Native first), live logcat streaming, automated pull of raw JSONL results, and post-run schema validation.
+- CLI & Automation targets: exposed `benchkit devices`, `benchkit check`, `benchkit install`, and `benchkit run` via `python -m benchkit` and `Makefile`.
+- Runner Unit Tests (`analysis/tests/test_runner.py`): expanded test suite to 21 unit tests (all passing cleanly, 100% ruff-compliant).
+- Pilot Campaign Specification (`experiments/EXP-001.md`): authored detailed execution log template ready for physical device run.
+
+### Changed
+- `apps/flutter_bench/pubspec.yaml`: upgraded `tflite_flutter` to `0.12.1` to maintain compatibility with Dart 3.12 typed data views without deprecation errors.
+- `apps/android_native_bench/app/build.gradle.kts`: added `org.tensorflow:tensorflow-lite-gpu-api:2.16.1` to provide `GpuDelegateFactory.Options` for GPU delegate instantiation; migrated deprecated `aaptOptions` to modern `androidResources`.
+- ADR-0008: updated toolchain pinning record to document `tflite_flutter 0.12.1`, AGP 8.6.0, and Gradle 8.14.
+
+### Fixed
+- Flutter Android resource linking: added Android styles (`LaunchTheme`, `NormalTheme`) in `res/values/styles.xml` and referenced standard app icon, resolving AAPT resource compilation errors during `assembleRelease`.
+- Kotlin Gradle Plugin JVM-target compatibility: configured `kotlin.jvm.target.validation.mode=warning` in Flutter `gradle.properties` to reconcile plugin target differences under JDK 21.
+
+
+
 ## 2026-11-09: Complete Literature Review, Model Exporter, Harness Apps, and Academic Paper Draft
 
 ### Decisions

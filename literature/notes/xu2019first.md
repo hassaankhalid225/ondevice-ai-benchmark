@@ -28,3 +28,4 @@ Presents the first comprehensive empirical study of deep learning applications i
 
 ## Quotable claim
 > On-device deep learning has moved rapidly into consumer apps, with vision workloads and lightweight architectures dominating mobile deployments, yet little is known about how host application framework architectures affect inference efficiency.
+

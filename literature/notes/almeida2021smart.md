@@ -28,3 +28,4 @@ Characterized the runtime performance, energy, and resource costs of deploying d
 
 ## Quotable claim
 > Device heating and dynamic voltage and frequency scaling rapidly degrade on-device inference speed, mandating strict inter-run cooldown protocols, non-parametric analysis, and robust session-level measurement.
+
