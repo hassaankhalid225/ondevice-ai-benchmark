@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Native Benchmark</string>
+    <string name="btn_start">Start Benchmark</string>
+    <string name="status_idle">Status: Idle</string>
+</resources>
