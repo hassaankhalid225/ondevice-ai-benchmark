@@ -11,6 +11,31 @@ exclusions:
     decided_by: hassaan
     date: 2026-11-09
     experiment: EXP-001
+  - run_id: "d6a34d96-7c9c-4b85-a7a1-e40d78545d85"
+    reason: "Native timer/roundMs sentinel overflow (9223372036854776 ms) across all iterations in efficientdet_lite0 fp32 nnapi s04"
+    decided_by: hassaan
+    date: 2026-11-10
+    experiment: EXP-001
+  - run_id: "72dd4f34-c3e4-41dd-a900-190ef3ad78ed"
+    reason: "Native timer/roundMs sentinel overflow (9223372036854776 ms) across all iterations in mobilenetv3_large fp32 cpu s05"
+    decided_by: hassaan
+    date: 2026-11-10
+    experiment: EXP-001
+  - run_id: "2d7a7e52-6547-4a85-a422-4fa92d891673"
+    reason: "Native timer/roundMs sentinel overflow (9223372036854776 ms) across all iterations in efficientdet_lite0 int8 gpu s06"
+    decided_by: hassaan
+    date: 2026-11-10
+    experiment: EXP-001
+  - run_id: "4fb60eda-6421-4afb-af47-6bc43c62bd69"
+    reason: "Native timer/roundMs sentinel overflow (9223372036854776 ms) in first s07 run; paired clean run 2bd09104 retained"
+    decided_by: hassaan
+    date: 2026-11-10
+    experiment: EXP-001
+  - run_id: "527d93fd-3571-411d-b1a5-c1fab0a58221"
+    reason: "Native timer/roundMs sentinel overflow (9223372036854776 ms) in first s07 run; paired clean run c3385800 retained"
+    decided_by: hassaan
+    date: 2026-11-10
+    experiment: EXP-001
 
 #  - run_id: "3f2a…"
 #    file: data/raw/dev-samsung-a14/20261220_flutter_mobilenetv3_large_fp32_cpu_s03.jsonl
