@@ -76,3 +76,34 @@ def test_exclusions_remove_runs(synthetic_raw):
     victim = df["run_id"].iloc[0]
     kept, excl = apply_exclusions(df, [{"run_id": victim, "reason": "test"}])
     assert victim not in set(kept["run_id"]) and len(kept) + len(excl) == len(df)
+
+
+def test_warmup_model_load_idle_and_device_label(tmp_path):
+    from benchkit.figures import _short_device
+    from benchkit.summarize import metric_frame
+
+    assert _short_device("dev-infinix-mobility-limited-infinix-x650c") == "infinix-x650c"
+    assert _short_device("dev-samsung-a14") == "samsung-a14"
+
+    # Model load collected during warmup iteration 0, idle_pss_mb in phase idle
+    recs = []
+    for plat, scale in [("flutter", 2.0), ("android_native", 1.0)]:
+        for s in range(1, 4):
+            recs.append({
+                "device_id": "dev-test-phone", "os": "android", "model_id": "mobilenetv3_large",
+                "precision": "fp32", "delegate": "cpu", "platform": plat, "session": s,
+                "phase": "warmup", "status": "ok", "model_load_ms": 20.0 * scale,
+            })
+        for i in range(4):
+            recs.append({
+                "device_id": "dev-test-phone", "os": "android", "model_id": "app_baseline",
+                "precision": "fp32", "delegate": "cpu", "platform": plat, "session": 1,
+                "phase": "idle", "status": "ok", "idle_pss_mb": 35.0 * scale,
+            })
+    import pandas as pd
+    df = pd.DataFrame(recs)
+    assert len(metric_frame(df, "model_load_ms")) == 6
+    assert len(metric_frame(df, "idle_pss_mb")) == 8
+    comp = compare_all(df, metrics=["model_load_ms", "idle_pss_mb"], resamples=200).set_index("metric")
+    assert comp.loc["model_load_ms", "n_x"] == 3 and 1.9 < comp.loc["model_load_ms", "ratio"] < 2.1
+    assert comp.loc["idle_pss_mb", "n_x"] == 4 and comp.loc["idle_pss_mb", "family"] == "RQ3"

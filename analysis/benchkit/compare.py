@@ -27,7 +27,7 @@ def compare_all(df: pd.DataFrame, *, metrics: list[str] | None = None, alpha: fl
         sub = metric_frame(df, metric)
         if sub.empty:
             continue
-        per_launch = METRIC_PHASE.get(metric) == "cold_start"
+        per_launch = METRIC_PHASE.get(metric) in ("cold_start", "idle")
         for keys, g in sub.groupby(CONFIG_KEYS, dropna=False):
             cfg = dict(zip(CONFIG_KEYS, keys))
             native = NATIVE.get(cfg["os"])

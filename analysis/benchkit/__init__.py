@@ -29,14 +29,16 @@ METRIC_FAMILIES: dict[str, str] = {
     "postprocess_ms": "RQ2",
     "end_to_end_ms": "RQ2",
     "pss_mb": "RQ3",
+    "idle_pss_mb": "RQ3",
     "cpu_pct": "RQ3",
     "cold_start_ms": "RQ5",
     "model_load_ms": "RQ5",
 }
 
-# Which phase each metric is taken from.
-METRIC_PHASE: dict[str, str] = {
+# Which phase each metric is taken from (tuple = any matching phase).
+METRIC_PHASE: dict[str, str | tuple[str, ...]] = {
     "cold_start_ms": "cold_start",
-    "model_load_ms": "cold_start",
+    "model_load_ms": ("cold_start", "warmup"),
+    "idle_pss_mb": "idle",
 }
 DEFAULT_PHASE = "measure"

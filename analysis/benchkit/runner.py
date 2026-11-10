@@ -191,12 +191,13 @@ def run_single_app(pkg: str, act: str, session: int, serial: str | None = None) 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
 
     def _stream(p: subprocess.Popen[str], q: queue.Queue[str]) -> None:
+        if p.stdout is None:
+            return
         try:
-            assert p.stdout is not None
             for line in p.stdout:
                 q.put(line)
-        except Exception:
-            pass
+        except (OSError, ValueError):
+            return
 
     log_q: queue.Queue[str] = queue.Queue()
     t = threading.Thread(target=_stream, args=(proc, log_q), daemon=True)

@@ -27,8 +27,16 @@ def _style() -> None:
     })
 
 
-def _label(row: pd.Series) -> str:
-    return f"{row['device_id'].removeprefix('dev-')} · {row['model_id']} · {row['precision']} · {row['delegate']}"
+def _short_device(device_id: str) -> str:
+    d = str(device_id).removeprefix("dev-")
+    if d == "infinix-mobility-limited-infinix-x650c":
+        return "infinix-x650c"
+    return d
+
+
+def _label(row: pd.Series, *, include_device: bool = True) -> str:
+    core = f"{row['model_id']} · {row['precision']} · {row['delegate']}"
+    return f"{_short_device(row['device_id'])} · {core}" if include_device else core
 
 
 def ratio_forest(comparisons: pd.DataFrame, metric: str, out: Path) -> Path | None:
@@ -38,15 +46,20 @@ def ratio_forest(comparisons: pd.DataFrame, metric: str, out: Path) -> Path | No
         return None
     _style()
     d = d.sort_values(["model_id", "precision", "delegate", "device_id"]).reset_index(drop=True)
-    fig, ax = plt.subplots(figsize=(IEEE_COL_IN, 0.22 * len(d) + 0.8))
+    multi_dev = d["device_id"].nunique() > 1
+    fig, ax = plt.subplots(figsize=(IEEE_COL_IN, max(1.35, 0.24 * len(d) + 0.85)))
     ypos = np.arange(len(d))[::-1]
     practical = d["practical"].astype(bool).to_numpy()
     for y, r, lo, hi, prac in zip(ypos, d["ratio"], d["ratio_lo"], d["ratio_hi"], practical):
         col = "#D55E00" if prac else "#555555"   # orange = practically significant
-        ax.errorbar([r], [y], xerr=[[r - lo], [hi - r]], fmt="o", ms=3, color=col, elinewidth=1, capsize=2)
+        ax.errorbar([r], [y], xerr=[[max(0.0, r - lo)], [max(0.0, hi - r)]],
+                    fmt="o", ms=3, color=col, elinewidth=1, capsize=2)
     ax.axvline(1.0, color="black", lw=0.8)
     ax.axvspan(0.95, 1.05, color="#DDDDDD", zorder=0, lw=0)
-    ax.set_yticks(ypos, [_label(r) for _, r in d.iterrows()])
+    ax.set_yticks(ypos, [_label(r, include_device=multi_dev) for _, r in d.iterrows()])
+    ax.set_ylim(-0.6, len(d) - 0.4)
+    if not multi_dev:
+        ax.set_title(f"Device: {_short_device(d['device_id'].iloc[0])}", loc="left", fontsize=7.5, pad=4)
     ax.set_xlabel(f"Median {metric.removesuffix('_ms')} ratio (Flutter / Native)")
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out)
@@ -60,18 +73,25 @@ def stage_decomposition(summary: pd.DataFrame, out: Path) -> Path | None:
     if s.empty:
         return None
     _style()
-    piv = s.pivot_table(index=["device_id", "model_id", "precision", "delegate", "platform"],
-                        columns="metric", values="median").reindex(columns=STAGES).fillna(0).reset_index()
-    labels = [f"{r.model_id}·{r.precision}·{r.delegate}\n{r.platform.replace('_native', ' native')}"
-              for r in piv.itertuples()]
-    fig, ax = plt.subplots(figsize=(IEEE_DBL_IN, 2.4))
+    piv = (s.pivot_table(index=["device_id", "model_id", "precision", "delegate", "platform"],
+                         columns="metric", values="median")
+            .reindex(columns=STAGES).fillna(0).reset_index()
+            .sort_values(["device_id", "model_id", "precision", "delegate", "platform"]))
+    labels = [
+        f"{r.model_id} · {r.precision} · {r.delegate} "
+        f"[{'Flutter' if r.platform == 'flutter' else 'Native'}]"
+        for r in piv.itertuples()
+    ]
+    fig, ax = plt.subplots(figsize=(IEEE_DBL_IN, 3.0))
     bottom = np.zeros(len(piv))
     for stage, col in zip(STAGES, STAGE_COLORS):
-        ax.bar(range(len(piv)), piv[stage], bottom=bottom, color=col, label=stage.removesuffix("_ms"))
+        ax.bar(range(len(piv)), piv[stage], bottom=bottom, color=col, width=0.72, label=stage.removesuffix("_ms"))
         bottom += piv[stage].to_numpy()
-    ax.set_xticks(range(len(piv)), labels, rotation=90)
+    max_h = float(bottom.max()) if len(bottom) else 1.0
+    ax.set_ylim(0, max_h * 1.12)
+    ax.set_xticks(range(len(piv)), labels, rotation=65, ha="right", fontsize=6.5)
     ax.set_ylabel("Median time (ms)")
-    ax.legend(frameon=False, ncols=len(STAGES))
+    ax.legend(frameon=False, ncols=len(STAGES), loc="upper center", bbox_to_anchor=(0.5, 1.13))
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out)
     plt.close(fig)
@@ -87,10 +107,34 @@ def comparisons_table(comparisons: pd.DataFrame, metric: str, out: Path) -> Path
              r"Device & Model & Prec. & Deleg. & Flutter & Native & Ratio [95\% CI] & $\delta$ & $p_{\mathrm{Holm}}$ \\",
              r"\midrule"]
     for r in d.sort_values(["device_id", "model_id", "precision", "delegate"]).itertuples():
-        dev = r.device_id.removeprefix("dev-").replace("_", r"\_")
-        model = r.model_id.replace("_", r"\_")
+        dev = _short_device(r.device_id).replace("_", r"\_")
+        model = str(r.model_id).replace("_", r"\_")
         p = "$<$0.001" if r.p_holm < 0.001 else f"{r.p_holm:.3f}"
         lines.append(f"{dev} & {model} & {r.precision} & {r.delegate} & {r.median_x:.2f} & {r.median_y:.2f} & "
+                     f"{r.ratio:.2f} [{r.ratio_lo:.2f}, {r.ratio_hi:.2f}] & {r.delta:+.2f} & {p} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return out
+
+
+def baseline_table(comparisons: pd.DataFrame, out: Path) -> Path | None:
+    """LaTeX booktabs table for app-level baseline metrics (cold_start_ms, idle_pss_mb)."""
+    d = comparisons[comparisons["metric"].isin(["cold_start_ms", "idle_pss_mb"])]
+    if d.empty:
+        return None
+    metric_labels = {
+        "cold_start_ms": r"Cold Start (\texttt{TotalTime}, ms)",
+        "idle_pss_mb": r"Idle Baseline PSS (MiB)",
+    }
+    lines = [r"\begin{tabular}{llrrrrl}", r"\toprule",
+             r"Device & Baseline Metric & Flutter & Native & Ratio [95\% CI] & $\delta$ & $p_{\mathrm{Holm}}$ \\",
+             r"\midrule"]
+    for r in d.sort_values(["device_id", "metric"]).itertuples():
+        dev = _short_device(r.device_id).replace("_", r"\_")
+        mlabel = metric_labels.get(r.metric, str(r.metric).replace("_", r"\_"))
+        p = "$<$0.001" if r.p_holm < 0.001 else f"{r.p_holm:.3f}"
+        lines.append(f"{dev} & {mlabel} & {r.median_x:.2f} & {r.median_y:.2f} & "
                      f"{r.ratio:.2f} [{r.ratio_lo:.2f}, {r.ratio_hi:.2f}] & {r.delta:+.2f} & {p} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -105,7 +149,12 @@ def make_all(summary: pd.DataFrame, comparisons: pd.DataFrame, figures_dir: Path
         stage_decomposition(summary, figures_dir / "rq2-stage-decomposition.pdf"),
         ratio_forest(comparisons, "pss_mb", figures_dir / "rq3-memory-ratio.pdf"),
         ratio_forest(comparisons, "cold_start_ms", figures_dir / "rq5-coldstart-ratio.pdf"),
+        ratio_forest(comparisons, "model_load_ms", figures_dir / "rq5-modelload-ratio.pdf"),
         comparisons_table(comparisons, "inference_native_ms", tables_dir / "rq1-inference.tex"),
         comparisons_table(comparisons, "end_to_end_ms", tables_dir / "rq2-e2e.tex"),
+        comparisons_table(comparisons, "pss_mb", tables_dir / "rq3-pss.tex"),
+        comparisons_table(comparisons, "cpu_pct", tables_dir / "rq3-cpu.tex"),
+        comparisons_table(comparisons, "model_load_ms", tables_dir / "rq5-modelload.tex"),
+        baseline_table(comparisons, tables_dir / "rq5-baseline.tex"),
     ]
     return [p for p in produced if p is not None]

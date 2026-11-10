@@ -13,7 +13,8 @@ def metric_frame(df: pd.DataFrame, metric: str) -> pd.DataFrame:
     phase = METRIC_PHASE.get(metric, DEFAULT_PHASE)
     if df.empty or metric not in df.columns:
         return df.iloc[0:0]
-    sel = (df["phase"] == phase) & (df["status"] == "ok") & df[metric].notna()
+    phase_mask = df["phase"].isin(phase) if isinstance(phase, tuple) else (df["phase"] == phase)
+    sel = phase_mask & (df["status"] == "ok") & df[metric].notna()
     return df.loc[sel]
 
 
