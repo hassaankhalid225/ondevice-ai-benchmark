@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/hassaankhalid/ondevice-ai-benchmark/benchmark-spec/result-schema.json",
+  "$id": "https://github.com/hassaankhalid225/ondevice-ai-benchmark/benchmark-spec/result-schema.json",
   "title": "Benchmark iteration record",
   "description": "One JSON object per line (JSONL). One record = one iteration of one configuration in one session.",
   "type": "object",

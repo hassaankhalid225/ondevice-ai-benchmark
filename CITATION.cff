@@ -6,8 +6,9 @@ authors:
     given-names: Hassaan
     affiliation: "Department of Software Engineering, University of Sargodha"
 version: 0.1.0
-date-released: 2026-11-09
+date-released: 2026-11-11
 license: MIT
+repository-code: "https://github.com/hassaankhalid225/ondevice-ai-benchmark"
 keywords:
   - on-device inference
   - edge AI

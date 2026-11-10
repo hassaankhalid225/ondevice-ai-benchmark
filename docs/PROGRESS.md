@@ -3,7 +3,7 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-10 · **Current phase:** 3, 5 & 6 Complete (EXP-001 Analyzed & Paper Revised) · **Protocol:** v0.3.0
+**Last updated:** 2026-11-11 · **Current phase:** Phase 3, 5 & 6 Complete (`v0.1.0-exp001` Release Snapshot) · **Protocol:** v0.3.0
 
 ## Current focus
 Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on entry-tier device `dev-infinix-x650c`), full statistical analysis (`benchkit`), and full paper drafting & empirical revision across `paper/sections/*.tex` are **complete** with zero `\todo{}` markers.
@@ -27,8 +27,8 @@ Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/i
 3. [x] Audit APKs/dependencies and record ADR-0009; refine `benchkit` tests (`23/23` pass, `ruff` clean).
 4. [x] Revise all paper sections (`paper/sections/*.tex`), `experiments/EXP-001.md`, `docs/`, and `CHANGELOG.md` to final verified EXP-001 numbers (`0` `\todo{}`).
 5. [x] Compile `paper/main.tex` to PDF (`paper/main.pdf`, 13 pages) and visually verify all rendered proof pages (0 errors, 0 Overfull boxes, 25/25 refs resolved; Overleaf `pdflatex` path also remains supported).
-6. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 submission.
-7. [ ] Optional / Follow-on `EXP-002+`: collect mid-range & flagship Android devices, unplugged `BATTERY_PROPERTY_CHARGE_COUNTER` energy runs, 5-min sustained thermal FPS runs, and pinned matched-LiteRT control runs.
+6. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 arXiv/conference submission.
+7. [ ] Begin `EXP-002` planning and hardware onboarding: connect **Infinix Smart 7** via ADB (`adb shell getprop` + `/proc/meminfo`) to verify SoC/API level and `BATTERY_PROPERTY_CHARGE_COUNTER` support before registering `docs/04-device-matrix.md`, implement unplugged `energy` and 5-minute `sustained` FPS runner loops plus matched-LiteRT control (`ADR-0010`), and add mid-range / flagship Android devices as available.
 
 ## Phase checklist
 - [x] Phase 0 · Setup (2026-11-09)

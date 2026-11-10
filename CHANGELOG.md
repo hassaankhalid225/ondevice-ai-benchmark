@@ -3,6 +3,14 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-11: Repository Release Metadata & EXP-002 Transition (`v0.1.0-exp001`)
+
+### Fixed
+- Fixed GitHub repository URLs from `github.com/hassaankhalid/...` to `github.com/hassaankhalid225/ondevice-ai-benchmark` across `benchmark-spec/result-schema.json`, `paper/sections/07-conclusion.tex`, `paper/one-pager.md`, and `CITATION.cff` (`date-released: 2026-11-11`), and recompiled/verified `paper/main.pdf` (13 pages, page 13 URL layout verified).
+
+### Changed
+- Updated `README.md` status summary for release `v0.1.0-exp001` and queued `EXP-002` device onboarding (`Infinix Smart 7` ADB inspection, unplugged `energy` + 5-min `sustained` loops, and matched-LiteRT control) in `docs/PROGRESS.md`.
+
 ## 2026-11-10: EXP-001 Completion (Session 8, Baseline Launch/Idle Dataset, ADR-0009, Full $N=8$ Paper Revision)
 
 ### Decisions

@@ -2,7 +2,7 @@
 
 **Author:** Hassaan Khalid (BS Software Engineering, University of Sargodha)  
 **Title:** *Cross-Platform vs. Native: A Performance Benchmark of On-Device Deep Learning Inference in Flutter and Native Android Applications*  
-**Code, Protocol & Raw Dataset:** `github.com/hassaankhalid/ondevice-ai-benchmark` (MIT)
+**Code, Protocol & Raw Dataset:** `github.com/hassaankhalid225/ondevice-ai-benchmark` (MIT)
 
 ## Problem & Protocol
 Mobile teams increasingly ship on-device deep learning inside cross-platform frameworks like Flutter rather than Native Android (Kotlin), yet lack controlled empirical evidence on the latency, memory, startup, and binary size trade-offs of invoking native LiteRT C/C++ engines through Dart FFI and pure-Dart preprocessing pipelines.
