@@ -3,97 +3,64 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-09 · **Current phase:** 3 · Pilot (EXP-001) In Progress · **Protocol:** v0.3.0
+**Last updated:** 2026-11-10 · **Current phase:** 3, 5 & 6 Complete (EXP-001 Analyzed & Paper Revised) · **Protocol:** v0.3.0
 
 ## Current focus
-Phase 1 (Literature Review), Phase 2 (Benchmark Harness Applications for Flutter and Android Native), and Phase 3 (Pilot Experiment EXP-001 with Multi-Session Execution) are complete!
-- **Device Registered:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, 3.7 GB RAM, Android 9 / API 28).
-- **Session 1 (Odd: Flutter First):**
-  - Android Native: 18/18 configurations executed and exported.
-  - Flutter: 15/18 configurations executed and exported.
-  - Total records collected: 2,413 valid records across 33 files.
-- **Session 2 (Even: Native First):**
-  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Alternating execution order verified per ADR-0007.
-- **Session 3 (Odd: Flutter First):**
-  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Native Android: 14 configurations executed and pulled.
-- **Session 4 (Even: Native First):**
-  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-- **Session 5 (Odd: Flutter First):**
-  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
-- **Session 6 (Even: Native First):**
-  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-- **Session 7 (Odd: Flutter First):**
-  - Flutter: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Android Native: 18/18 configurations executed, pulled, and validated (100% PASS).
-  - Seed: `20261116` (`20261109L + 7`).
-  - Total records collected to date: **21,088 raw records across 245 files**.
-- **Next to Execute: Final Session 8 (Even: Native First):**
-  - Order protocol: Native Android first (18 configs), followed by Flutter (18 configs).
-  - Seed: `20261117` (`20261109L + 8`).
-  - Device telemetry: Battery 91% (charging), thermal state normal (30.0°C).
-- **Empirical Dataset Status:**
-  - Raw dataset: **245 JSONL benchmark files** in `data/raw/dev-infinix-x650c/`.
-  - Schema validation: **245/245 files (100%) PASS** `benchkit validate` against `benchmark-spec/result-schema.json` v1.1.
-  - Summary aggregation: `data/processed/summary.csv` generated (**192 metric summary rows**, 20,848 valid empirical measurements).
-  - Multi-session statistical comparisons: `data/processed/comparisons.csv` generated (**80 cross-platform comparisons** computing Mann-Whitney U, Cliff's delta, Holm-adjusted p-values, and bootstrap ratio 95% CIs).
-  - Publication artifacts: 4 vector figures in `paper/figures/` and 2 LaTeX tables in `paper/tables/`.
-  - Research paper: `paper/sections/04-results.tex` fully drafted with empirical findings answering RQ1–RQ5.
-- **Tooling & Harness Hardening:**
-  - `ClassificationTask` and `DetectionTask` output & input shapes standardized across Kotlin and Dart to resolve LiteRT multidimensional buffer mappings.
-  - Flutter event-loop yielding (`await Future.delayed(Duration.zero)`) added to eliminate UI thread blocking and frame freeze.
-  - Process watchdog and liveness detection (`pidof`) added to `analysis/benchkit/runner.py`.
-  - Full test suite passes: 22/22 tests in `analysis/tests/` (100% clean).
+Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on entry-tier device `dev-infinix-x650c`), full statistical analysis (`benchkit`), and full paper drafting & empirical revision across `paper/sections/*.tex` are **complete** with zero `\todo{}` markers.
+
+- **Device Evaluated:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, PowerVR GE8320, 3.7 GB RAM, Android 9 / API 28; runtime JSONL slug `dev-infinix-mobility-limited-infinix-x650c`).
+- **Completed Dataset & Validation (`data/raw/dev-infinix-x650c/`):**
+  - **283 raw JSONL files (100% PASS `benchkit validate`)**: Sessions 1–8 benchmark runs (`23,980` records) + 2 `app_baseline` JSONLs from 10 alternating cold launches (`40` records) = **24,020 raw records**.
+  - **Exclusions (`data/exclusions.yaml`):** 7 Native runs (`840` records hitting MT6765/Android 9 `9223372036854776` ms clock-overflow sentinel) excluded during analysis while preserved immutable in `data/raw/`.
+  - **Retained Records (`23,180`):** `19,200` `measure ok` (`11,200` Native, `8,000` Flutter), `3,840` `warmup ok` (`192` `model_load_ms` initializations), `40` `app_baseline` (`20 cold_start`, `20 idle`), `4` Session-1 early Native INT8 errors, and `96` `unsupported` delegate markers.
+  - **Integrity Checks:** `500/500` comparable `(model, precision, delegate, input_index)` `output_digest` pairs match (100%); `timer_residual_ms` median = `0.0000 ms` (`max |r| = 0.0010 ms`); `thermal_status = none` across all kept records.
+- **Root-Cause & Ecosystem Audit (ADR-0009):**
+  - Audited release APKs (`123.83 MB` Flutter vs `65.63 MB` Native universal; `24.06 MB` vs `7.27 MB` `arm64-v8a` non-model footprint; `54.74 MB` identical `.tflite` models) and Pub/Gradle transitive bindings: traced CPU gains to `tflite_flutter 0.12.1` pulling LiteRT `1.4.0`/`2.20.0` + default single-thread `XNNPackDelegate(nullptr)` vs Maven TFLite `2.16.1` 4-thread contention, traced incremental memory (`1.25x–3.06x` over Native above idle) & CPU loading slowdowns (`3.74x–11.71x`) to `Model.fromBuffer()` unfreed `calloc<Uint8>` copies vs Native `mmap`, and updated `benchkit` to extract `warmup[0]` `model_load_ms` and `idle_pss_mb`.
+- **Analysis & Paper Generation (`analysis/benchkit` + `paper/`):**
+  - `data/processed/summary.csv`: **220 rows**; `data/processed/comparisons.csv`: **92 cross-platform comparisons** across RQ1, RQ2, RQ3, and RQ5 families (`n_F = 8`, `n_N \in \{5, 7, 8\}`, `n = 10` baseline launches).
+  - Generated **6 vector PDFs** (`paper/figures/`) and **6 LaTeX tables** (`paper/tables/`), visually inspected for layout clarity.
+  - Revised all paper sections (`00-abstract.tex` through `07-conclusion.tex`), eliminating every `\todo{}`, fixing table syntax, adding APK binary disassembly + RQ4 shader break-even & correlation analyses, and passing automated LaTeX linting/cross-ref/bib verification + `ruff check` + `23/23` `pytest`.
 
 ## Next actions (in order)
-1. [x] Connect a physical Android device via USB with USB Debugging enabled (`dev-infinix-x650c`).
-2. [x] Inspect hardware properties and register row into `docs/04-device-matrix.md`.
-3. [x] Deploy both release APKs to the device (`benchkit install`).
-4. [x] Execute Session 1 of pilot campaign EXP-001 and pull valid JSONL results.
-5. [x] Run `benchkit validate data/raw` and `benchkit summarize data/raw` to generate `summary.csv`.
-6. [x] Execute Session 2 across both Native and Flutter platforms under ADR-0007 alternating order.
-7. [x] Run `python -m benchkit compare data/raw --out data/processed/comparisons.csv` ($N \ge 2$ sessions collected).
-8. [x] Run `python -m benchkit figures` to produce publication-ready PDF figures and LaTeX tables.
-9. [x] Populate `paper/sections/04-results.tex` with real empirical numbers addressing RQ1–RQ5.
-10. [ ] Execute subsequent repeated sessions (Session 3 through Session 8) to reach full campaign scale ($N=8$).
-11. [ ] Check with university department regarding faculty supervisor assignment and format requirements.
+1. [x] Execute complete $N=8$ alternating campaign on `dev-infinix-x650c` + $n=10$ baseline cold-start/idle trials.
+2. [x] Validate raw JSONLs (`283/283`), finalize exclusions (`840` sentinel records), and run `benchkit` pipeline (`summary.csv`, `comparisons.csv`, 6 figures, 6 tables).
+3. [x] Audit APKs/dependencies and record ADR-0009; refine `benchkit` tests (`23/23` pass, `ruff` clean).
+4. [x] Revise all paper sections (`paper/sections/*.tex`), `experiments/EXP-001.md`, `docs/`, and `CHANGELOG.md` to final verified EXP-001 numbers (`0` `\todo{}`).
+5. [ ] Compile `paper/` to PDF in Overleaf (upload `paper/` + `literature/references.bib`) and perform author read-through of rendered proof.
+6. [ ] Confirm university department supervisor/template rules and arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 submission.
+7. [ ] Optional / Follow-on `EXP-002+`: collect mid-range & flagship Android devices, unplugged `BATTERY_PROPERTY_CHARGE_COUNTER` energy runs, 5-min sustained thermal FPS runs, and pinned matched-LiteRT control runs.
 
 ## Phase checklist
 - [x] Phase 0 · Setup (2026-11-09)
-- [x] Phase 1 · Literature (2026-11-09)
+- [x] Phase 1 · Literature (2026-11-09; 25 verified references, 6 reading notes)
 - [x] Phase 2 · Harness apps: Flutter & Android Native (2026-11-09)
-- [ ] Phase 2b · iOS app (optional)
-- [x] Phase 3 · Pilot (EXP-001) (Sessions 1 & 2 fully executed, validated, and analyzed)
-- [/] Phase 4 · Full data collection (Sessions 1-2 done; Sessions 3-8 ready)
-- [x] Phase 5 · Analysis (Wilcoxon/MWU, Cliff's delta, Holm-Bonferroni, figures, tables generated)
-- [x] Phase 6 · Writing (`04-results.tex` empirically completed with real findings)
-- [ ] Phase 7 · Release (arXiv preprint + conference submission)
+- [ ] Phase 2b · iOS app (optional / deferred)
+- [x] Phase 3 · EXP-001 Entry-Tier Campaign on `dev-infinix-x650c` ($N=8$ + baseline, 2026-11-10)
+- [ ] Phase 4 · Multi-tier, unplugged energy, and 5-min sustained expansion (`EXP-002+`)
+- [x] Phase 5 · Analysis (`benchkit`: `summary.csv`, `comparisons.csv`, 6 PDF figures, 6 LaTeX tables)
+- [x] Phase 6 · Writing (All 8 `paper/sections/*.tex` drafted & empirically revised; 0 `\todo{}`)
+- [ ] Phase 7 · Release (Overleaf PDF proof + author review + arXiv preprint & conference submission)
 
 ## Paper section status
 | Section | File | Status | Reviewed |
 |---|---|---|---|
-| Abstract | `paper/sections/00-abstract.tex` | drafted | – |
-| Introduction | `paper/sections/01-introduction.tex` | drafted (complete) | – |
-| Related work | `paper/sections/02-related-work.tex` | drafted (25 verified refs) | – |
-| Methodology | `paper/sections/03-methodology.tex` | drafted (complete) | – |
-| Results | `paper/sections/04-results.tex` | completed (empirically populated) | – |
-| Discussion | `paper/sections/05-discussion.tex` | drafted (complete with decision matrix) | – |
-| Threats to validity | `paper/sections/06-threats.tex` | drafted (complete) | – |
-| Conclusion | `paper/sections/07-conclusion.tex` | drafted (complete) | – |
+| Abstract | `paper/sections/00-abstract.tex` | complete (EXP-001 $N=8$ verified) | – |
+| Introduction | `paper/sections/01-introduction.tex` | complete (scope aligned to EXP-001) | – |
+| Related work | `paper/sections/02-related-work.tex` | complete (25 verified refs) | – |
+| Methodology | `paper/sections/03-methodology.tex` | complete (ADR-0009, hygiene & stats updated) | – |
+| Results | `paper/sections/04-results.tex` | complete (RQ1–RQ5 tables/figs, APK disassembly, RQ4 analysis) | – |
+| Discussion | `paper/sections/05-discussion.tex` | complete (`fromBuffer`/XNNPACK fixes + decision matrix) | – |
+| Threats to validity | `paper/sections/06-threats.tex` | complete (drift, glitches, USB scope, MWU power) | – |
+| Conclusion | `paper/sections/07-conclusion.tex` | complete (RQ1–RQ5 answers + `EXP-002+` roadmap) | – |
 
 ## Open questions / blockers
-- Does the university's mandatory research paper need a supervisor? **to confirm with department**
-- Does the first arXiv submission need an endorsement? **check arXiv cs.LG/cs.SE requirements**
-- Does the department require a specific paper format (IEEE vs. own template)? **confirm with department**
+- Does the university's mandatory research paper need a faculty supervisor assigned? **confirm with department**
+- Does the first arXiv submission need an endorsement? **check arXiv `cs.LG` / `cs.SE` requirements**
+- Does the department require a specific paper template vs.\ IEEEtran? **confirm with department**
 
 ## Data collected
-- Device: `dev-infinix-x650c` (MediaTek Helio P22 MT6765, Android 9 / API 28)
-- Total files: 87 JSONL files in `data/raw/dev-infinix-x650c/` (100% schema valid)
-- Valid records: 6,513 empirical measurements (120 excluded via `data/exclusions.yaml`)
-- Processed: `data/processed/summary.csv` (192 metric summary rows)
-- Comparisons: `data/processed/comparisons.csv` (48 statistical comparison rows)
+- Device: `dev-infinix-x650c` (MediaTek Helio P22 MT6765, PowerVR GE8320, Android 9 / API 28)
+- Total files: **283 raw JSONL files** in `data/raw/dev-infinix-x650c/` (**100% pass `benchkit validate`**)
+- Raw records: **24,020** (`840` excluded via `data/exclusions.yaml` → **23,180 kept** = `19,200` `measure ok`, `3,840` `warmup ok`, `40` `app_baseline`, `4` s01 `error`, `96` `unsupported`)
+- Processed: `data/processed/summary.csv` (**220 metric summary rows**)
+- Comparisons: `data/processed/comparisons.csv` (**92 statistical comparison rows**)

@@ -35,15 +35,15 @@ it is what a developer experiences.
 ## Startup
 | Field | Definition |
 |---|---|
-| `cold_start_ms` | process start → first inference result (`am start -W` TotalTime + app-logged first-result time; both recorded) |
-| `model_load_ms` | interpreter creation + allocateTensors (+ delegate init) |
+| `cold_start_ms` | process start → first frame (`am start -W` TotalTime, WaitTime also logged in separate `app_baseline` `cold_start` runs) |
+| `model_load_ms` | interpreter creation + allocateTensors (+ delegate init), recorded at iteration `0` of `warmup` runs |
 
-## Memory (MB = 10^6 bytes)
+## Memory (PSS reported in MiB = KiB / 1024; binary sizes in SI decimal MB = 10^6 bytes)
 | Field | Definition |
 |---|---|
-| `pss_mb` | total PSS of the app process after the iteration (`Debug.MemoryInfo.getTotalPss()` KB → MB) |
-| `idle_pss_mb` | PSS of the same app after launch, before loading the model (baseline per session) |
-Derived: `model_pss_delta_mb = peak(pss_mb) − idle_pss_mb`.
+| `pss_mb` | total PSS of the app process after the iteration (`Debug.MemoryInfo.getTotalPss()` KiB ÷ 1024) |
+| `idle_pss_mb` | settled idle PSS of the same app after launch before loading any model (`dumpsys meminfo TOTAL` KiB ÷ 1024 in `app_baseline` `idle` runs) |
+Derived: `model_pss_delta_mb = peak(pss_mb) − idle_pss_mb`. Note: field names retain the `*_mb` schema identifiers per v1.1.
 
 ## CPU
 | Field | Definition |

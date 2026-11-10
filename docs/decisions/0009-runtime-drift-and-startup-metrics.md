@@ -1,0 +1,30 @@
+# 0009 · Runtime version drift, sentinel exclusions, and startup/idle baseline metrics
+
+- **Status:** accepted
+- **Date:** 2026-11-10
+- **Deciders:** Hassaan Khalid
+- **Affects:** `docs/03-metrics.md`, `data/exclusions.yaml`, `analysis/benchkit/`, `paper/sections/03-methodology.tex`, `paper/sections/04-results.tex`, `paper/sections/06-threats.tex`
+
+## Context
+During execution and binary auditing of the full $N=8$ pilot campaign (`EXP-001` on `dev-infinix-x650c`), five empirical findings required explicit documentation so reported comparisons remain transparent and reproducible without altering protocol semantics (`protocol.yaml` v0.3.0):
+
+1. **LiteRT C++ Runtime & XNNPACK Configuration Drift:** Both exporters record `"runtime_version": "2.16.1"` in JSONL metadata (ADR-0008 intent). Inspection of the installed release APKs reveals that Android Native links `org.tensorflow:tensorflow-lite:2.16.1` (`lib/arm64-v8a/libtensorflowlite_jni.so`, `3,401,672 B`, version string `2.16.1`) with `Interpreter.Options().setNumThreads(4).setUseXNNPACK(true)`, whereas Flutter `tflite_flutter: 0.12.1` resolves `com.google.ai.edge.litert:litert:1.4.0` (`libtensorflowlite_jni.so`, `4,320,472 B`, version string `2.20.0`) and instantiates `XNNPackDelegate()` with `nullptr` default options (`TfLiteXNNPackDelegateCreate(nullptr)`) alongside `options..threads = 4`. Consequently, Flutter CPU XNNPACK executes newer `2.20.0` kernels primarily single-threaded (`~60–68%` process CPU), whereas Native executes `2.16.1` multi-threaded (`~153–185%` CPU on MobileNetV3-Large), explaining Flutter's significant CPU latency advantage on FP32 MobileBERT-QA (`0.50x`) and EfficientDet-Lite0 (`0.75x`) while GPU compute shaders achieve full parity (`0.99x–1.04x`).
+2. **Asset Loading (`fromBuffer` Heap Copy vs. `mmap`):** Native Android loads `.tflite` models via zero-copy `FileChannel.map(FileChannel.MapMode.READ_ONLY)`. By contrast, `tflite_flutter`'s `Interpreter.fromAsset()` loads the full flatbuffer through `rootBundle.load()`, allocates a persistent C heap buffer via `calloc<Uint8>(size)` inside `Model.fromBuffer()`, and does not call `calloc.free(ptr)` when `Model.delete()` closes `TfLiteModel`. On $\approx 20\text{ MB}$ FP32 models, this accounts for $4.26\times\text{--}11.17\times$ slower CPU model initialization and $1.74\times\text{--}3.06\times$ larger incremental PSS over idle baseline.
+3. **Android 9 (API 28) Delegate Support:** `tflite_flutter` `0.12.1` does not expose NNAPI on Dart FFI (`status: "unsupported"` across all 6 configs), and PowerVR Rogue GE8320 rejects `mobilenetv3_large` GPU acceleration on both stacks. Native `NnApiDelegate` initializes only on `efficientdet_lite0` and `mobilebert_qa` with slow CPU-partition fallback.
+4. **Sentinel Overflow Exclusions (`data/exclusions.yaml`):** Seven Android Native runs (840 records across Sessions 2–8) hit a `9223372036854776` ms (`Long.MAX_VALUE` / $10^6$) stage-timing overflow glitch and remain preserved in `data/raw/` while excluded from `data/processed/` via `data/exclusions.yaml`.
+5. **Startup, Idle PSS, `model_load_ms`, and Units:** Both harnesses record `model_load_ms` during `warmup` iteration 0 (`n = 192`), rather than `cold_start`. Additionally, shell cold start (`am start -W TotalTime`) and settled idle PSS baseline (`dumpsys meminfo TOTAL` at 2 s) were measured over $n = 10$ alternating cold launches per release APK and archived as two schema-valid `app_baseline` raw JSONLs (`20261110_*_app_baseline_fp32_cpu_s01.jsonl`). Note that both `getTotalPss()` and `dumpsys meminfo` convert KiB to MiB via `/ 1024.0` (`pss_mb`, `idle_pss_mb`), whereas APK and model asset sizes follow SI decimal MB ($10^6\text{ B}$). Note also that runtime `Build.MANUFACTURER + Build.MODEL` normalization yielded `dev-infinix-mobility-limited-infinix-x650c` in JSONL records for registered device `dev-infinix-x650c`.
+
+## Options considered
+1. **Rebuild Flutter / Native APKs to downgrade or upgrade LiteRT and re-run 8 sessions:**
+   - Pros: aligns C library versions across platforms.
+   - Cons: invalidates the completed 281-file EXP-001 dataset collected on physical hardware under protocol v0.3.0; loses insight into real-world `pub.dev` vs Maven release packaging (`tflite_flutter 0.12.1` ships LiteRT 1.4.0/`2.20.0` by default).
+2. **Keep EXP-001 raw data immutable, transparently document all empirical/binary divergences, and refine `benchkit` phase extraction:**
+   - Pros: preserves 100% of immutable raw measurements (CLAUDE.md Rule 2), reveals genuine cross-platform ecosystem differences (`litert 1.4.0` vs `tflite 2.16.1`, `calloc` asset loading vs `mmap`, default XNNPACK threading), and enables reproducible `model_load_ms` and `idle_pss_mb` analysis directly from `data/raw/`.
+   - Cons: CPU latency comparisons must be interpreted jointly with runtime version and delegate configuration rather than attributed solely to Dart FFI.
+
+## Decision
+Adopt Option 2. Keep all EXP-001 raw JSONL files immutable, add the 10-launch `app_baseline` JSONLs (`phase: cold_start` and `phase: idle`) to `data/raw/dev-infinix-x650c/`, allow `benchkit` to read `model_load_ms` from `("cold_start", "warmup")` and `idle_pss_mb` from `"idle"` (`RQ3`), normalize the long device string in figures/tables, and report the LiteRT `2.20.0` vs `2.16.1` binary/XNNPACK drift and asset-loading mechanism explicitly in Methodology, Results, Discussion, and Threats to Validity.
+
+## Consequences
+- `analysis/benchkit` extracts `model_load_ms`, `cold_start_ms`, and `idle_pss_mb` reproducibly into `summary.csv`, `comparisons.csv`, and generated `.tex`/`.pdf` outputs without changing `protocol.yaml` v0.3.0 or `result-schema.json` v1.1.
+- Future multi-tier campaigns (`EXP-002+`) should either pin both harnesses to an identical LiteRT binary version (`com.google.ai.edge.litert:litert:1.4.0` on Native + explicit `XNNPackDelegateOptions(numThreads: 4)` + `File` `mmap` on Flutter) or benchmark both default and matched runtime configurations explicitly.

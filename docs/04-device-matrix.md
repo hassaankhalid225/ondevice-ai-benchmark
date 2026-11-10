@@ -5,10 +5,12 @@ paths and in every record.
 
 | device_id | Tier | Model | SoC | RAM | OS / API | Owner / source | Status |
 |---|---|---|---|---|---|---|---|
-| `dev-infinix-x650c` | low | Infinix X650C (Hot 8) | MediaTek Helio P22 (MT6765) | 3.7 GB | Android 9 (API 28) | Hassaan Khalid | ready |
+| `dev-infinix-x650c` | low | Infinix X650C (Hot 8) | MediaTek Helio P22 (MT6765) | 3.7 GB | Android 9 (API 28) | Hassaan Khalid | EXP-001 complete (N=8) |
 | _dev-xxx-yyy_ | mid | | | | | | planned |
 | _dev-xxx-yyy_ | high | | | | | | planned |
 | _dev-apple-iphoneXX_ | iOS (optional) | | | | | | planned |
+
+> **Runtime slug note (ADR-0009):** On `dev-infinix-x650c`, Android's `Build.MANUFACTURER` + `Build.MODEL` normalization emits `dev-infinix-mobility-limited-infinix-x650c` inside raw JSONL files; `benchkit` figures/tables shorten this display label to `infinix-x650c`.
 
 ## Tier guidance
 - **Low:** ≤ 4 GB RAM, entry SoC (e.g. Helio G/Unisoc/Snapdragon 4-series), the common

@@ -3,6 +3,29 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-10: EXP-001 Completion (Session 8, Baseline Launch/Idle Dataset, ADR-0009, Full $N=8$ Paper Revision)
+
+### Decisions
+- ADR-0009 (accepted): Documented LiteRT `2.20.0` (`tflite_flutter 0.12.1` / `litert 1.4.0`) vs `2.16.1` (`tensorflow-lite:2.16.1`) binary/XNNPACK drift, `Model.fromBuffer()` unfreed `calloc<Uint8>` asset copies vs Native `FileChannel.map`, Android 9 API 28 NNAPI restrictions, `data/exclusions.yaml` clock-overflow filtering, MiB vs SI decimal MB conventions, `warmup[0]` `model_load_ms` extraction, and runtime `device_id` display normalization.
+
+### Data
+- Completed Session 8 (36 JSONLs, even order: Native first, seed `20261117`, 2,892 records, 100% clean) on `dev-infinix-x650c`.
+- Collected 10 alternating cold-launch (`am start -W TotalTime` / `WaitTime`) and settled idle PSS (`dumpsys meminfo TOTAL`) baseline trials per release APK, exported to 2 schema-valid `app_baseline` JSONLs (`20261110_*_app_baseline_fp32_cpu_s01.jsonl`, 40 records).
+- Reached complete EXP-001 scale: **283/283 valid raw JSONL files**, **24,020 raw records** (`840` excluded across 7 Native sentinel-overflow runs via `data/exclusions.yaml` → **23,180 kept records** including `19,200` `measure ok`, `3,840` `warmup ok`, and `40` `app_baseline`), `500/500` (`100%`) `output_digest` parity, and `thermal_status = none` throughout.
+
+### Changed
+- `analysis/benchkit/`: added `idle_pss_mb` (`RQ3`) and tuple `phase` (`("cold_start", "warmup")`) support for `model_load_ms`; enabled per-launch `cold_start`/`idle` comparisons; improved forest-plot single-device labeling, error-bar lower clamping, and stage decomposition legend spacing; added `baseline_table()` (`paper/tables/rq5-baseline.tex`); refined exception handling in `runner.py` for clean `ruff` compliance; added unit test `test_warmup_model_load_idle_and_device_label` (23/23 tests pass).
+- Regenerated processed datasets and artifacts: `data/processed/summary.csv` (220 rows), `data/processed/comparisons.csv` (92 rows), 6 PDFs in `paper/figures/` (`rq1-inference-ratio`, `rq2-e2e-ratio`, `rq2-stage-decomposition`, `rq3-memory-ratio`, `rq5-coldstart-ratio`, `rq5-modelload-ratio`), and 6 LaTeX tables in `paper/tables/`.
+
+### Paper & Docs
+- Revised `paper/sections/00-abstract.tex`, `01-introduction.tex`, `03-methodology.tex`, `04-results.tex`, `05-discussion.tex`, `06-threats.tex`, and `07-conclusion.tex` to exact EXP-001 $N=8$ + baseline numbers, replaced raw backticks with `\texttt{}`, fixed table environments and wide-table scaling, eliminated all `\todo{}` markers, integrated exact APK `arm64-v8a` vs universal disassembly and RQ4 correlation/shader break-even analyses, and aligned scope honestly to `dev-infinix-x650c`.
+- Added executive research portfolio summary in `paper/one-pager.md` referencing key EXP-001 findings and figures.
+- Updated `docs/03-metrics.md`, `docs/04-device-matrix.md`, `experiments/EXP-001.md`, `docs/PROGRESS.md`, and `README.md`.
+
+### Fixed
+- `paper/sections/04-results.tex`: repaired duplicated `\end{tabular}\end{table}` block and inaccurate earlier parity/incremental-RAM claims.
+- `data/exclusions.yaml`: completed exclusion entries for Sessions 4–7 sentinel-overflow runs (totaling 7 runs / 840 records).
+
 ## 2026-11-10: Campaign Expansion through Session 7 (245 Raw Files, 21,088 Records Collected, Schema Validated)
 
 ### Added
