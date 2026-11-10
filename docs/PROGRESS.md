@@ -19,15 +19,15 @@ Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/i
 - **Analysis & Paper Generation (`analysis/benchkit` + `paper/`):**
   - `data/processed/summary.csv`: **220 rows**; `data/processed/comparisons.csv`: **92 cross-platform comparisons** across RQ1, RQ2, RQ3, and RQ5 families (`n_F = 8`, `n_N \in \{5, 7, 8\}`, `n = 10` baseline launches).
   - Generated **6 vector PDFs** (`paper/figures/`) and **6 LaTeX tables** (`paper/tables/`), visually inspected for layout clarity.
-  - Revised all paper sections (`00-abstract.tex` through `07-conclusion.tex`), eliminating every `\todo{}`, fixing table syntax, adding APK binary disassembly + RQ4 shader break-even & correlation analyses, and passing automated LaTeX linting/cross-ref/bib verification + `ruff check` + `23/23` `pytest`.
+  - Revised all paper sections (`00-abstract.tex` through `07-conclusion.tex`), compiled the **13-page IEEEtran PDF (`paper/main.pdf`)** locally via portable Tectonic (`XeTeX`) with cross-engine `iftex`/`TeX Gyre` font support, eliminated all `\todo{}`, resolved Equation~(2) overflow, fixed math-mode `\times`/comma spacing and Table~X wrapping, visually verified all 13 rendered pages, and passed automated LaTeX linting/cross-ref/bib verification (`25/25` citations resolved) + `ruff check` + `23/23` `pytest`.
 
 ## Next actions (in order)
 1. [x] Execute complete $N=8$ alternating campaign on `dev-infinix-x650c` + $n=10$ baseline cold-start/idle trials.
 2. [x] Validate raw JSONLs (`283/283`), finalize exclusions (`840` sentinel records), and run `benchkit` pipeline (`summary.csv`, `comparisons.csv`, 6 figures, 6 tables).
 3. [x] Audit APKs/dependencies and record ADR-0009; refine `benchkit` tests (`23/23` pass, `ruff` clean).
 4. [x] Revise all paper sections (`paper/sections/*.tex`), `experiments/EXP-001.md`, `docs/`, and `CHANGELOG.md` to final verified EXP-001 numbers (`0` `\todo{}`).
-5. [ ] Compile `paper/` to PDF in Overleaf (upload `paper/` + `literature/references.bib`) and perform author read-through of rendered proof.
-6. [ ] Confirm university department supervisor/template rules and arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 submission.
+5. [x] Compile `paper/main.tex` to PDF (`paper/main.pdf`, 13 pages) and visually verify all rendered proof pages (0 errors, 0 Overfull boxes, 25/25 refs resolved; Overleaf `pdflatex` path also remains supported).
+6. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 submission.
 7. [ ] Optional / Follow-on `EXP-002+`: collect mid-range & flagship Android devices, unplugged `BATTERY_PROPERTY_CHARGE_COUNTER` energy runs, 5-min sustained thermal FPS runs, and pinned matched-LiteRT control runs.
 
 ## Phase checklist

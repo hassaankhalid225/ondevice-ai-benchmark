@@ -19,6 +19,7 @@ Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
 ### Paper & Docs
 - Revised `paper/sections/00-abstract.tex`, `01-introduction.tex`, `03-methodology.tex`, `04-results.tex`, `05-discussion.tex`, `06-threats.tex`, and `07-conclusion.tex` to exact EXP-001 $N=8$ + baseline numbers, replaced raw backticks with `\texttt{}`, fixed table environments and wide-table scaling, eliminated all `\todo{}` markers, integrated exact APK `arm64-v8a` vs universal disassembly and RQ4 correlation/shader break-even analyses, and aligned scope honestly to `dev-infinix-x650c`.
+- Compiled the final 13-page IEEE PDF (`paper/main.pdf`) via portable Tectonic (`XeTeX`) and visually verified every rendered page; added cross-engine `iftex`/`TeX Gyre` font configuration plus `array`/`xurl`/`microtype` to `paper/main.tex`, fixed Equation (2) column overflow in `03-methodology.tex`, resolved math-mode `\times`/comma spacing and `List<List<double>{}>` ligatures across sections, and ragged-right aligned Table X columns in `05-discussion.tex` (0 compile errors, 0 Overfull boxes, 25/25 citations resolved).
 - Added executive research portfolio summary in `paper/one-pager.md` referencing key EXP-001 findings and figures.
 - Updated `docs/03-metrics.md`, `docs/04-device-matrix.md`, `experiments/EXP-001.md`, `docs/PROGRESS.md`, and `README.md`.
 
