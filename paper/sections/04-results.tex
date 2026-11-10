@@ -1,107 +1,151 @@
 \section{Results}\label{sec:results}
 
-We structure our empirical findings by addressing each research question in sequence. All reported medians, percentiles, effect sizes, and bootstrap confidence intervals are computed using the automated analysis pipeline (`benchkit`) on session-level aggregates.
+We present the empirical results from Campaign EXP-001 on \texttt{dev-infinix-x650c} across RQ1--RQ5. All figures and statistical tables are generated directly from the validated 283-file raw dataset (23,180 retained records after 840 clock-sentinel exclusions) using \texttt{analysis/benchkit}. Unless noted as single-platform NNAPI summary statistics, reported medians compare medians of independent session medians ($n_F = 8$, $n_N \in \{5, 7, 8\}$; $n = 10$ for cold-start and idle baseline trials).
 
 \subsection{RQ1: Pure Inference Latency}\label{subsec:rq1}
-Research Question 1 asks whether pure kernel inference execution time ($\text{inference\_native\_ms}$), isolated from language-boundary wrapper code, differs between Flutter and Native Android when executing identical model weights on the same LiteRT runtime.
-
-Table~\ref{tab:rq1_inference} summarizes the session median latencies, Cliff's $\delta$, Holm-adjusted $p$-values, and bootstrap ratio confidence intervals across all model architectures, precisions, and execution delegates.
-
-\begin{table}[t]
-\caption{Pure Inference Latency Comparison ($\text{inference\_native\_ms}$)}
-\label{tab:rq1_inference}
-\centering
-\input{tables/rq1-inference.tex}
-\end{table}
-
-\textbf{Findings:} As hypothesized in H1$_0$, pure native inference latency exhibits empirical equivalence across Flutter and Native Android on GPU delegates. For instance, on MobileBERT-QA (FP32 GPU), Flutter achieves a median of 53.64\,ms versus Native's 53.41\,ms (ratio 1.00 [1.00, 1.01], $\delta = +0.50$); on EfficientDet-Lite0 (FP32 GPU), Flutter records 54.23\,ms versus Native's 54.33\,ms (ratio 1.00 [0.98, 1.02], $\delta = +0.00$, negligible effect size). Because both platforms dispatch execution to the identical underlying C++ runtime engine (`libtensorflowlite.so`), compute kernel execution on shared hardware acceleration units achieves true parity once input buffers are dispatched.
-
-\subsection{RQ2: End-to-End Latency and Pipeline Stage Decomposition}\label{subsec:rq2}
-While pure inference latency exhibits parity, end-to-end user-perceived duration ($\text{end\_to\_end\_ms}$) diverges substantially. Figure~\ref{fig:stage_breakdown} presents the decomposition of end-to-end latency across preprocessing, boundary marshalling, native inference, and postprocessing stages, while Table~\ref{tab:rq2_e2e} details the statistical comparison.
+Research Question~1 examines whether pure kernel runtime latency (\texttt{inference\_native\_ms}), excluding outer FFI/JNI wrapper work, differs across Flutter and Native Android. Figure~\ref{fig:rq1_ratio} and Table~\ref{tab:rq1_inference} report the cross-platform comparisons across the 10 shared configurations.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/rq2-stage-decomposition.pdf}
-\caption{Latency decomposition across preprocessing, language boundary overhead, native inference, and postprocessing across Flutter and Native Android.}
-\label{fig:stage_breakdown}
+\includegraphics[width=\columnwidth]{figures/rq1-inference-ratio.pdf}
+\caption{Session-median ratio ($\mathcal{R} = \text{Flutter}/\text{Native}$) and 95\% bootstrap CI for pure kernel inference latency (\texttt{inference\_native\_ms}). Shaded band denotes $\pm 5\%$ equivalence; orange markers denote practically significant differences.}
+\label{fig:rq1_ratio}
 \end{figure}
 
-\begin{table}[t]
-\caption{End-to-End Latency Comparison ($\text{end\_to\_end\_ms}$)}
-\label{tab:rq2_e2e}
+\begin{table*}[t]
+\caption{Pure Kernel Inference Latency Comparison (\texttt{inference\_native\_ms}, ms) Across Session Medians}
+\label{tab:rq1_inference}
 \centering
-\input{tables/rq2-e2e.tex}
-\end{table}
+\resizebox{\textwidth}{!}{\input{tables/rq1-inference.tex}}
+\end{table*}
 
-\textbf{Findings:} Supporting hypothesis H2$_1$, the performance discrepancy between Flutter and Native Android is overwhelmingly driven by data ingestion and preprocessing rather than neural network compute:
+\textbf{Findings:} Empirical outcomes split sharply between GPU hardware delegation and CPU software execution:
 \begin{itemize}
-    \item \textbf{Preprocessing Overhead:} In vision tasks (e.g., EfficientDet-Lite0), pure Dart image decoding and bilinear resizing introduce a substantial latency penalty (median 88.7\,ms in Flutter vs. 23.5\,ms in Native Android), representing a $3.77\times$ slowdown ($\delta = +1.00$, large effect size) due to Android's optimized native bitmap scaling. Conversely, for text tokenization (MobileBERT-QA), preprocessing latencies are comparable (0.42\,ms vs. 0.28\,ms).
-    \item \textbf{Boundary Overhead:} The language-boundary marshalling duration ($\text{boundary\_overhead\_ms} = \text{inference\_ms} - \text{inference\_native\_ms}$), which reflects copying multidimensional typed buffers across the Dart FFI bridge, adds 3.24\,ms to 4.49\,ms in Flutter compared to 0.28\,ms to 1.72\,ms for DirectBuffer JNI mapping in Native Android ($11\times$ to $15\times$ relative difference on MobileBERT-QA, $\delta = +1.00$).
-    \item \textbf{Postprocessing:} Result parsing (e.g., argmax extraction and detection coordinate scaling) represents a negligible fraction of overall execution time ($< 0.5\%$).
+    \item \textbf{GPU Delegate Parity ($H1_0$ Supported):} Across all four mutually supported GPU configurations, Flutter and Native Android achieve statistical and practical equivalence ($p_{\mathrm{Holm}} = 1.000$, $|\delta| \le 0.31$). On MobileBERT-QA, medians align within $0.2$\,ms: $53.60$ vs.\ $53.41$\,ms FP32 ($\mathcal{R} = 1.00\,[0.99, 1.01]$) and $60.20$ vs.\ $60.16$\,ms INT8 ($\mathcal{R} = 1.00\,[0.98, 1.04]$). On EfficientDet-Lite0 GPU, medians are $54.17$ vs.\ $54.78$\,ms FP32 ($\mathcal{R} = 0.99\,[0.98, 1.02]$) and $68.81$ vs.\ $66.18$\,ms INT8 ($\mathcal{R} = 1.04\,[0.94, 1.08]$). PowerVR GE8320 rejects \texttt{mobilenetv3\_large} GPU acceleration on both stacks (\texttt{unsupported}).
+    \item \textbf{CPU Runtime/Threading Divergence (ADR-0009):} Rather than exhibiting a Flutter penalty, Flutter's CPU execution significantly outpaces Native Android on two FP32 models: MobileBERT-QA FP32 ($116.02$ vs.\ $232.80$\,ms, $\mathcal{R} = 0.50\,[0.39, 0.69]$, $\delta = -1.00$, $p_{\mathrm{Holm}} = 0.003$) and EfficientDet-Lite0 FP32 ($101.80$ vs.\ $136.45$\,ms, $\mathcal{R} = 0.75\,[0.50, 0.86]$, $\delta = -0.81$, $p_{\mathrm{Holm}} = 0.042$). As audited in Section~\ref{sec:method}, \texttt{tflite\_flutter}~0.12.1 ships newer LiteRT~2.20.0 kernels with single-threaded default XNNPACK (\texttt{nullptr} options), outperforming Native TFLite~2.16.1's 4-thread contention on Cortex-A53 clusters. The remaining four CPU configurations (MobileNetV3-Large FP32/INT8 and INT8 EfficientDet/MobileBERT) exhibit large cross-session DVFS spread (ratio CIs spanning $[0.18, 1.59]$) and remain statistically indistinguishable ($p_{\mathrm{Holm}} \ge 0.577$).
+    \item \textbf{Native-Only NNAPI (Android~9 API~28):} While Flutter FFI marks NNAPI \texttt{unsupported}, Native NNAPI executes MobileBERT-QA and EfficientDet-Lite0 at session medians near or slower than Native CPU ($219.27$\,ms vs.\ $136.45$\,ms EfficientDet FP32; $79.48$\,ms INT8; $225.69$\,ms MobileBERT FP32; $105.58$\,ms INT8), reflecting CPU-partition fallback on API~28.
 \end{itemize}
 
-\subsection{RQ3: Memory, CPU, and Battery Consumption}\label{subsec:rq3}
-Table~\ref{tab:resources} compares resource utilization across steady-state execution.
+\subsection{RQ2: End-to-End Latency and Pipeline Stage Decomposition}\label{subsec:rq2}
+Figures~\ref{fig:stage_breakdown} and~\ref{fig:rq2_e2e} and Table~\ref{tab:rq2_e2e} decompose end-to-end execution (\texttt{end\_to\_end\_ms}) into preprocessing, FFI/JNI boundary marshalling, pure kernel execution, and postprocessing.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/rq2-stage-decomposition.pdf}
+\caption{Pipeline stage decomposition (\texttt{preprocess\_ms}, \texttt{boundary\_overhead\_ms}, \texttt{inference\_native\_ms}, and \texttt{postprocess\_ms}) across all 24 evaluated platform configurations on \texttt{dev-infinix-x650c}, showing pooled configuration stage medians.}
+\label{fig:stage_breakdown}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/rq2-e2e-ratio.pdf}
+\caption{Session-median ratio ($\text{Flutter}/\text{Native}$) and 95\% bootstrap CI for user-perceived end-to-end latency (\texttt{end\_to\_end\_ms}).}
+\label{fig:rq2_e2e}
+\end{figure}
+
+\begin{table*}[t]
+\caption{End-to-End Latency Comparison (\texttt{end\_to\_end\_ms}, ms) Across Session Medians}
+\label{tab:rq2_e2e}
+\centering
+\resizebox{\textwidth}{!}{\input{tables/rq2-e2e.tex}}
+\end{table*}
+
+\textbf{Findings:} Supporting hypothesis H2$_1$, end-to-end performance gaps in vision applications are overwhelmingly caused by pure-Dart preprocessing, whereas language-boundary transitions remain below 5\,ms in absolute cost:
+\begin{itemize}
+    \item \textbf{End-to-End Divergence:} Under GPU delegation on EfficientDet-Lite0, Flutter slows total pipeline latency to $156.13$ vs.\ $77.99$\,ms on FP32 ($\mathcal{R} = 2.00\,[1.84, 2.11]$, $\delta = +1.00$, $p_{\mathrm{Holm}} = 0.008$) and $176.17$ vs.\ $92.33$\,ms on INT8 ($\mathcal{R} = 1.91\,[1.50, 2.27]$, $\delta = +1.00$, $p_{\mathrm{Holm}} = 0.036$). On MobileNetV3-Large CPU, Flutter's session medians are $+73$ to $+80$\,ms slower ($223.06$ vs.\ $143.50$\,ms FP32; $161.19$ vs.\ $88.11$\,ms INT8), though high Native multi-core jitter widens ratio CIs ($[0.41, 3.23]$, $p_{\mathrm{Holm}} = 1.000$). Conversely, on MobileBERT-QA FP32 GPU, Flutter incurs a small yet practically significant $+4.90$\,ms delay ($58.94$ vs.\ $54.04$\,ms, $\mathcal{R} = 1.09\,[1.08, 1.10]$, $p_{\mathrm{Holm}} = 0.008$), while FP32 CPU preserves Flutter's runtime speedup ($119.59$ vs.\ $233.18$\,ms, $\mathcal{R} = 0.51$, $p_{\mathrm{Holm}} = 0.011$).
+    \item \textbf{Preprocessing Dominance:} Pure Dart JPEG decoding and bilinear resizing take $68.53\text{--}103.17$\,ms across vision workloads versus $8.64\text{--}24.56$\,ms in Native Android---a $4.20\times$ to $10.48\times$ practically and statistically significant slowdown ($\delta = +1.00$, $p_{\mathrm{Holm}} \in [0.008, 0.036]$ across all 6 vision comparisons). By contrast, WordPiece tokenization on MobileBERT-QA finishes under $0.5$\,ms on both stacks ($0.31\text{--}0.42$\,ms Flutter vs.\ $0.26\text{--}0.30$\,ms Native).
+    \item \textbf{FFI vs.\ JNI Boundary Marshalling:} Across all 10 configurations, Flutter's \texttt{boundary\_overhead\_ms} ($0.88\text{--}4.63$\,ms) exceeds Native Android's ($0.21\text{--}1.47$\,ms; all $\delta = +1.00$, $p_{\mathrm{Holm}} \le 0.036$). Vision models incur $1.68\times\text{--}2.40\times$ ratios ($+0.36\text{--}2.05$\,ms absolute), whereas MobileBERT-QA exhibits $11.90\times\text{--}18.22\times$ relative ratios ($2.76\text{--}4.63$\,ms vs.\ $0.21\text{--}0.32$\,ms) because \texttt{QATask.dart} passes three token arrays and unpacks nested \texttt{List<List<double>>} start/end logits via recursive \texttt{Tensor.copyTo()} instead of zero-copy \texttt{ByteBuffer} views. Crucially, while $<5$\,ms is negligible against slow CPU inference, its $+4.02$\,ms delta on MobileBERT-QA FP32 GPU accounts for $82\%$ of the end-to-end latency gap.
+    \item \textbf{Postprocessing:} Scalar argmax, box threshold counting, and span indexing contribute $< 0.3\%$ of total execution ($0.018\text{--}0.162$\,ms Flutter vs.\ $0.033\text{--}0.092$\,ms Native).
+\end{itemize}
+
+\subsection{RQ3: Memory, CPU Utilization, and Thermal Scope}\label{subsec:rq3}
+Figure~\ref{fig:memory_ratio}, Tables~\ref{tab:rq3_pss} and~\ref{tab:rq3_cpu}, and Table~\ref{tab:rq5_baseline} quantify active memory, baseline memory, and CPU utilization.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/rq3-memory-ratio.pdf}
-\caption{Forest plot of Proportional Set Size (PSS) memory ratio (Flutter / Native Android) with 95\% bootstrap confidence intervals.}
+\caption{Session-median ratio ($\text{Flutter}/\text{Native}$) and 95\% bootstrap CI for steady-state process memory (\texttt{pss\_mb}).}
 \label{fig:memory_ratio}
 \end{figure}
 
-\begin{table}[t]
-\caption{System Resource Utilization Comparison}
-\label{tab:resources}
+\begin{table*}[t]
+\caption{Steady-State Process Memory Comparison (\texttt{pss\_mb}, MiB) Across Session Medians}
+\label{tab:rq3_pss}
 \centering
-\begin{tabular}{lllll}
-\toprule
-\textbf{Workload} & \textbf{Metric} & \textbf{Flutter} & \textbf{Native} & \textbf{Effect Size ($\delta$)} \\
-\midrule
-EfficientDet FP32 GPU & Peak PSS (MB) & 181.6 & 67.8 & +1.00 (Large) \\
-MobileBERT FP32 GPU & Peak PSS (MB) & 201.4 & 68.0 & +1.00 (Large) \\
-MobileBERT INT8 CPU & Peak PSS (MB) & 122.9 & 49.3 & +1.00 (Large) \\
-EfficientDet FP32 CPU & CPU Util. (\%) & 66.5\% & 58.8\% & +0.50 (Medium) \\
-MobileBERT FP32 GPU & CPU Util. (\%) & 4.5\% & 3.6\% & +1.00 (Large) \\
-\bottomrule
-\end{tabular}
-\end{table}
+\resizebox{\textwidth}{!}{\input{tables/rq3-pss.tex}}
+\end{table*}
+
+\begin{table*}[t]
+\caption{Process CPU Utilization Comparison (\texttt{cpu\_pct}, \%) Across Session Medians}
+\label{tab:rq3_cpu}
+\centering
+\resizebox{\textwidth}{!}{\input{tables/rq3-cpu.tex}}
+\end{table*}
 
 \textbf{Findings:}
 \begin{itemize}
-    \item \textbf{Memory Footprint:} Confirming hypothesis H3a$_1$, Flutter incurs a consistent memory premium of $2.0\times$ to $2.96\times$ in proportional set size (PSS), with steady-state memory spanning 122.9\,MB to 201.4\,MB in Flutter versus 49.3\,MB to 68.0\,MB in Native Android ($\delta = +1.00$). This delta originates from the bundled Dart VM runtime, Skia graphics rendering context, and the separate Dart isolate heap.
-    \item \textbf{CPU Utilization:} When executing compute on GPU delegates (MobileBERT FP32 GPU), host CPU utilization drops drastically on both platforms (4.5\% Flutter vs. 3.6\% Native Android). During multi-threaded CPU inference, CPU utilization scales to 58.8\%–66.5\%, with Flutter showing modest additional overhead (+7.7\%) attributable to UI thread event polling and background isolate synchronization.
+    \item \textbf{Both Idle and Incremental PSS Are Larger in Flutter ($H3a_1$ Supported):} At settled idle launch with zero models loaded ($n=10$), Flutter occupies $71.29$\,MiB (IQR $0.52$) versus Native Android's $33.30$\,MiB (IQR $0.25$)---a $2.14\times$ ($[2.13, 2.16]$, $\delta = +1.00$, $p_{\mathrm{Holm}} = 0.003$) baseline tax of $+37.99$\,MiB from the Dart VM and rendering runtime. Under active inference, Flutter steady-state PSS ranges from $107.86$ to $200.36$\,MiB versus Native's $55.77$ to $86.64$\,MiB ($1.72\times\text{--}2.64\times$, $\delta \in [+0.82, +1.00]$, all $p_{\mathrm{Holm}} \le 0.024$). Crucially, subtracting idle baselines does \emph{not} erase the gap: Flutter's incremental inference PSS ($36.56\text{--}129.06$\,MiB) remains $1.25\times\text{--}3.06\times$ larger ($+7.24$ to $+83.18$\,MiB higher) than Native's ($22.47\text{--}53.34$\,MiB). This stems from \texttt{Model.fromBuffer()} copying the asset flatbuffer into unfreed native heap alongside the LiteRT C arena and Dart bitmap decode allocations (contrasted against Native zero-copy \texttt{mmap}). Native NNAPI PSS spans $60.04\text{--}78.02$\,MiB.
+    \item \textbf{CPU Utilization Regimes:} Under GPU delegation, Native host CPU drops to $3.35\%\text{--}3.58\%$ (NLP) and $12.42\%\text{--}13.31\%$ (EfficientDet), whereas Flutter consumes significantly higher host CPU ($4.57\%\text{--}4.69\%$ NLP, $1.27\times\text{--}1.40\times$; $31.61\%\text{--}34.95\%$ EfficientDet, $2.55\times\text{--}2.63\times$, all $p_{\mathrm{Holm}} \le 0.012$) driven by Dart preprocessing and isolate scheduling. Conversely, on CPU MobileNetV3-Large and FP32 MobileBERT-QA, Native's 4-thread XNNPACK utilizes $153.29\%\text{--}184.69\%$ ($67.48\%$ on QA) versus Flutter's single-thread default XNNPACK $50.76\%\text{--}67.97\%$ ($\mathcal{R} = 0.37\text{--}0.75$, $p_{\mathrm{Holm}} \le 0.012$).
+    \item \textbf{Energy and Sustained Thermal Status:} Because all EXP-001 sessions ran tethered over USB under 60\,s cooldowns, every kept record stayed at \texttt{thermal\_status = none}; unplugged battery drain ($H3b_1$) and 5-minute sustained throttling trajectories remain outside EXP-001 measurements.
 \end{itemize}
 
-\subsection{RQ4: Interaction Effects with Quantization and Delegates}\label{subsec:rq4}
-Evaluating interactions across precisions and hardware delegates yields critical architectural insights:
+\subsection{RQ4: Interaction Effects Across Scale, Precision, and Delegates}\label{subsec:rq4}
+Cross-factor analysis reveals three nuanced interaction mechanisms rather than monotonic compute amortization:
 \begin{itemize}
-    \item \textbf{Amortization of Framework Overhead:} As model computational complexity increases (from EfficientDet-Lite0 to MobileBERT-QA), the relative percentage overhead of Flutter's preprocessing and boundary crossing shrinks from 50.8\% of end-to-end time down to 8.8\%, supporting hypothesis H4$_1$. For compute-heavy workloads, native inference dominates wall-clock time, rendering Flutter's framework tax negligible.
-    \item \textbf{Quantization Effects:} INT8 quantization reduces tensor buffer volume by $4\times$, which proportionally reduces Dart FFI marshalling time (from 4.49\,ms down to 3.06\,ms on MobileBERT) and reduces memory footprint by 38.8\% (from 201.4\,MB to 122.9\,MB PSS).
-    \item \textbf{Delegate Disparities:} The GPU delegate achieves dramatic speedups over CPU execution on both platforms: MobileBERT-QA inference latency plummets from 122.1\,ms (CPU) to 53.6\,ms (GPU) on Flutter ($2.28\times$ speedup) and from 269.9\,ms to 53.4\,ms on Native Android ($5.05\times$ speedup), completely bypassing CPU scheduling bottlenecks.
+    \item \textbf{Modality Confounding vs.\ Delegate-Driven Gap Amplification ($H4_1$ Qualified):} Across all 10 shared configs, Flutter's non-kernel share ($(\text{end\_to\_end} - \text{inference\_native})/\text{end\_to\_end}$) ranges from $60.9\%\text{--}65.3\%$ on GPU EfficientDet-Lite0 and $42.7\%\text{--}58.7\%$ on CPU vision down to $8.2\%\text{--}9.1\%$ on GPU MobileBERT-QA and $3.0\%\text{--}3.4\%$ on CPU MobileBERT-QA. Overall Spearman rank correlation between Native baseline kernel compute (\texttt{inference\_native\_ms}) and cross-platform end-to-end ratio is $\rho = -0.39$ ($p = 0.260$; $\rho = -0.33, p = 0.347$ for Flutter non-kernel share vs.\ kernel time) because lightweight NLP tokenization is overshadowed by heavy JPEG image decoding on smaller vision FLOPs. Within a fixed workload, however, accelerating the kernel via GPU \emph{amplifies} Flutter's relative gap: switching EfficientDet-Lite0 FP32 from CPU to GPU halves Native kernel time ($136.45 \to 54.78$\,ms), exposing constant Dart image decoding ($68.5\text{--}99.4$\,ms) and widening the end-to-end ratio from $\mathcal{R} = 1.17$ ($p_{\mathrm{Holm}} = 1.000$) to $\mathcal{R} = 2.00$ ($p_{\mathrm{Holm}} = 0.008$). Likewise on MobileBERT-QA FP32, moving CPU $\to$ GPU shifts $\mathcal{R} = 0.51$ ($p_{\mathrm{Holm}} = 0.011$) to $\mathcal{R} = 1.09$ ($p_{\mathrm{Holm}} = 0.008$).
+    \item \textbf{Quantization Precision (FP32 vs.\ INT8):} On CPU, INT8 cuts pure inference latency by $25.8\%\text{--}47.2\%$ in Flutter ($33.3\%\text{--}56.7\%$ in Native CPU, up to $63.8\%$ in Native NNAPI) and cuts active steady-state PSS by $18.0\%\text{--}27.4\%$ on Flutter CPU configs ($12.0\%\text{--}23.3\%$ on Native CPU; $5.2\%\text{--}14.6\%$ on Native NNAPI). It also reduces FFI marshalling time by $58.9\%$ on MobileNetV3-Large ($2.14 \to 0.88$\,ms). However, on PowerVR GE8320 GPU without native INT8 shader pipelines, INT8 runs $12.3\%\text{--}27.0\%$ \emph{slower} than FP32 ($68.81$ vs.\ $54.17$\,ms EfficientDet; $60.20$ vs.\ $53.60$\,ms QA in Flutter) due to runtime dequantization, leaving Flutter INT8 GPU EfficientDet slower end-to-end than CPU ($176.17$ vs.\ $154.51$\,ms).
+    \item \textbf{GPU Speedup vs.\ Shader-Compilation Break-Even:} GPU accelerates pure kernel execution $1.88\times\text{--}2.16\times$ on Flutter ($1.37\times\text{--}4.36\times$ on Native), yet OpenCL shader compilation incurs $1.63\text{--}4.20$\,s initial overhead (Table~\ref{tab:rq5_modelload}). Dividing initialization penalty by per-iteration end-to-end gain yields practical break-even horizons: MobileBERT-QA FP32 amortizes GPU shader warmup after $28$ Flutter inferences ($10$ Native), whereas Dart preprocessing shrinks EfficientDet-Lite0 FP32 per-iteration end-to-end savings from $73.9$\,ms (Native) to $21.6$\,ms (Flutter), delaying break-even from $32$ to $114$ inferences---and never breaking even on Flutter INT8 EfficientDet.
 \end{itemize}
 
-\subsection{RQ5: Cold Start and Binary Footprint}\label{subsec:rq5}
-Table~\ref{tab:footprint} details cold-start latency to first inference result and compiled application package sizes.
+\subsection{RQ5: Startup Latency, Model Load Time, and APK Footprint}\label{subsec:rq5}
+Tables~\ref{tab:rq5_baseline}, \ref{tab:rq5_modelload}, and~\ref{tab:apk_footprint} and Figure~\ref{fig:rq5_modelload} detail cold launch, idle baseline, model initialization, and binary size penalties.
 
 \begin{table}[t]
-\caption{Startup Latency and Application Binary Footprint}
-\label{tab:footprint}
+\caption{Baseline Cold-Launch and Idle Memory Comparison ($n = 10$ Alternating Launches)}
+\label{tab:rq5_baseline}
 \centering
-\begin{tabular}{llll}
-\toprule
-\textbf{Metric} & \textbf{Flutter} & \textbf{Native} & \textbf{Differential} \\
-\midrule
-Universal Release APK Size & 118.1\,MB & 65.6\,MB & +52.5\,MB (+80.0\%) \\
-Embedded Model Assets & 48.2\,MB & 48.2\,MB & 0.0\,MB (Parity) \\
-Application Code \& Runtime & 69.9\,MB & 17.4\,MB & +52.5\,MB (+301.7\%) \\
-Model Loading Duration (FP32) & 12.4\,ms & 7.9\,ms & +4.5\,ms (+56.9\%) \\
-\bottomrule
-\end{tabular}
-\end{table}
-Base Engine Size (No Models) & \todo{MB} & \todo{MB} & \todo{+$X$ MB} \\
-\bottomrule
-\end{tabular}
+\resizebox{\columnwidth}{!}{\input{tables/rq5-baseline.tex}}
 \end{table}
 
-\textbf{Findings:} Confirming hypothesis H5$_1$, Flutter applications exhibit longer cold-start latency to first inference result (\todo{ms} vs.\ \todo{ms} in native Android), driven by Dart VM initialization and engine startup. Furthermore, Flutter APK binaries carry an unavoidable base footprint premium of \todo{MB} resulting from bundled engine and graphics runtime libraries.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/rq5-modelload-ratio.pdf}
+\caption{Session-median ratio ($\text{Flutter}/\text{Native}$) and 95\% bootstrap CI for \texttt{model\_load\_ms} (warmup iteration~0).}
+\label{fig:rq5_modelload}
+\end{figure}
+
+\begin{table*}[t]
+\caption{Model Initialization Latency Comparison (\texttt{model\_load\_ms}, ms) Across Runs}
+\label{tab:rq5_modelload}
+\centering
+\resizebox{\textwidth}{!}{\input{tables/rq5-modelload.tex}}
+\end{table*}
+
+\begin{table}[t]
+\caption{Release APK Binary Footprint Disassembly (SI Decimal MB = $10^6$\,B)}
+\label{tab:apk_footprint}
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Artifact / Component} & \textbf{Flutter} & \textbf{Native} & \textbf{Delta} \\
+\midrule
+Universal Release APK (disk) & 123.83 & 65.63 & +58.20 (+88.7\%) \\
+\quad Embedded \texttt{.tflite} Models (6 files) & 54.74 & 54.74 & 0.00 (Parity) \\
+\quad Universal Code, Runtime \& Assets & 69.09 & 10.89 & +58.20 \\
+\midrule
+Single-ABI (\texttt{arm64-v8a}) Non-Model Total & 24.06 & 7.27 & +16.79 (+230.9\%) \\
+\quad \texttt{libflutter.so} + \texttt{libapp.so} + \texttt{libdartjni.so} & 16.37 & 0.00 & +16.37 \\
+\quad \texttt{libtensorflowlite\_*.so} (LiteRT 2.20 vs.\ 2.16) & 6.82 & 5.36 & +1.46 \\
+\quad DEX, Resources \& Evaluation Inputs & 0.87 & 1.91 & -1.04 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\textbf{Findings:} Confirming hypothesis H5$_1$:
+\begin{itemize}
+    \item \textbf{Cold Launch ($n=10$):} Flutter requires $468.50$\,ms (\texttt{TotalTime}, IQR $10.75$; \texttt{WaitTime} $518.50$\,ms) to render its first frame versus Native Android's $423.00$\,ms (IQR $20.50$; \texttt{WaitTime} $461.00$\,ms)---a statistically significant $+45.5$\,ms ($+10.8\%$) penalty ($\mathcal{R} = 1.11\,[1.05, 1.14]$, $\delta = +0.92$, $p_{\mathrm{Holm}} = 0.005$; CI lower bound $1.049$ sits on the practical equivalence boundary).
+    \item \textbf{Two-Regime Model Initialization:} On CPU runs without shader compilation, Flutter's \texttt{calloc} asset reading creates large significant slowdowns on 5--22\,MB models: MobileNetV3-Large FP32 ($103.93$ vs.\ $8.88$\,ms, $\mathcal{R} = 11.71$, $p_{\mathrm{Holm}} = 0.012$), MobileNetV3-Large INT8 ($205.51$ vs.\ $27.63$\,ms, $\mathcal{R} = 7.44$, $p_{\mathrm{Holm}} = 0.003$), and MobileBERT-QA FP32 ($74.33$ vs.\ $19.86$\,ms, $\mathcal{R} = 3.74$, $p_{\mathrm{Holm}} = 0.003$), whereas small EfficientDet-Lite0 flatbuffers ($0.42\text{--}1.62$\,MB) show parity ($36.48\text{--}48.64$ vs.\ $36.34\text{--}39.41$\,ms, $p_{\mathrm{Holm}} = 1.000$). Conversely, GPU shader compilation dominates both stacks equally ($1,628\text{--}3,348$\,ms Flutter vs.\ $1,659\text{--}4,198$\,ms Native, all $p_{\mathrm{Holm}} = 1.000$).
+    \item \textbf{APK Footprint Disassembly:} Raw universal APKs measure $123.83$\,MB ($118.09$\,MiB) for Flutter versus $65.63$\,MB ($62.59$\,MiB) for Native ($+58.20$\,MB), inflated by Flutter also bundling \texttt{x86\_64} alongside ARM ABIs. Stripping extra ABIs to compare fair single-ABI \texttt{arm64-v8a} non-model contents reveals Flutter adds $+16.79$\,MB ($24.06$ vs.\ $7.27$\,MB): $+16.37$\,MB for Dart/Flutter engine libraries and $+1.46$\,MB for bundled LiteRT~2.20.0 over 2.16.1, partly offset by $-1.04$\,MB smaller DEX/AndroidX code.
+\end{itemize}

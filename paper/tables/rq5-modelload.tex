@@ -1,0 +1,16 @@
+\begin{tabular}{llllrrrrl}
+\toprule
+Device & Model & Prec. & Deleg. & Flutter & Native & Ratio [95\% CI] & $\delta$ & $p_{\mathrm{Holm}}$ \\
+\midrule
+infinix-x650c & efficientdet\_lite0 & fp32 & cpu & 48.64 & 39.41 & 1.23 [0.84, 1.92] & +0.38 & 1.000 \\
+infinix-x650c & efficientdet\_lite0 & fp32 & gpu & 2499.53 & 2346.67 & 1.07 [0.74, 1.32] & -0.06 & 1.000 \\
+infinix-x650c & efficientdet\_lite0 & int8 & cpu & 36.48 & 36.34 & 1.00 [0.23, 2.66] & +0.04 & 1.000 \\
+infinix-x650c & efficientdet\_lite0 & int8 & gpu & 3347.65 & 4197.75 & 0.80 [0.20, 1.28] & -0.45 & 1.000 \\
+infinix-x650c & mobilebert\_qa & fp32 & cpu & 74.33 & 19.86 & 3.74 [3.22, 8.28] & +1.00 & 0.003 \\
+infinix-x650c & mobilebert\_qa & fp32 & gpu & 1768.96 & 1659.50 & 1.07 [0.69, 1.29] & -0.09 & 1.000 \\
+infinix-x650c & mobilebert\_qa & int8 & cpu & 56.93 & 61.35 & 0.93 [0.70, 1.71] & +0.14 & 1.000 \\
+infinix-x650c & mobilebert\_qa & int8 & gpu & 1628.23 & 1936.43 & 0.84 [0.58, 1.30] & -0.38 & 1.000 \\
+infinix-x650c & mobilenetv3\_large & fp32 & cpu & 103.93 & 8.88 & 11.71 [9.96, 14.40] & +1.00 & 0.012 \\
+infinix-x650c & mobilenetv3\_large & int8 & cpu & 205.51 & 27.63 & 7.44 [5.62, 11.64] & +1.00 & 0.003 \\
+\bottomrule
+\end{tabular}

@@ -1,122 +1,92 @@
 \section{Methodology}\label{sec:method}
 
-To rigorously evaluate the performance characteristics of on-device deep learning inference across cross-platform and native stacks, we design a full-factorial, controlled empirical benchmark following pre-registered hypotheses and established systems evaluation standards~\cite{georges2007statistically,barrett2017virtual}.
+To isolate the latency, resource, and footprint overheads attributable to the Flutter application layer without confounding algorithmic differences, we implement a controlled, pre-registered experimental protocol (Protocol~v0.3.0) adhering to systems benchmarking standards~\cite{georges2007statistically,barrett2017virtual}.
 
-\subsection{Experimental Design and Factors}
-Our benchmark evaluates five controlled independent experimental factors, summarized in Table~\ref{tab:factors}:
+\subsection{Experimental Design and Evaluated Hardware Scope}
+Our benchmark protocol defines five experimental factors (summarized in Table~\ref{tab:factors}):
 \begin{enumerate}
-    \item \textbf{Platform ($P$):} Flutter (Dart Ahead-Of-Time compiled) and Android Native (Kotlin compiled with R8 full-mode shrinking).
-    \item \textbf{Model ($M$):} Three standard edge deep learning architectures spanning computer vision and natural language processing: MobileNetV3-Large~\cite{howard2019searching}, EfficientDet-Lite0~\cite{tan2020efficientdet}, and MobileBERT-QA~\cite{sun2020mobilebert}.
+    \item \textbf{Platform ($P$):} Flutter~3.44.5 (Dart~3.12.2 compiled AOT to native ARM machine code, \texttt{tflite\_flutter}~0.12.1) versus Native Android (Kotlin~1.9.24 compiled with R8 full-mode shrinking).
+    \item \textbf{Model ($M$):} Three standard edge architectures spanning image classification, object detection, and question answering: MobileNetV3-Large~\cite{howard2019searching}, EfficientDet-Lite0~\cite{tan2020efficientdet}, and MobileBERT-QA~\cite{sun2020mobilebert}.
     \item \textbf{Precision ($Q$):} 32-bit floating-point (FP32) and full 8-bit integer post-training quantization (INT8)~\cite{jacob2018quantization}.
-    \item \textbf{Hardware Delegate ($D$):} CPU multi-threading (4 threads with XNNPACK kernel acceleration), mobile GPU (OpenCL/OpenGL compute shaders), and Android Neural Networks API (NNAPI).
-    \item \textbf{Device Tier ($T$):} Physical handsets spanning entry-level, mid-range, and flagship hardware profiles.
+    \item \textbf{Hardware Delegate ($D$):} CPU with XNNPACK acceleration, mobile GPU (OpenCL/OpenGL ES compute shaders), and Android Neural Networks API (NNAPI).
+    \item \textbf{Device Tier ($T$):} Entry-tier Android smartphone hardware (Campaign EXP-001). We select an entry-level handset (\texttt{dev-infinix-x650c}: Infinix Hot~8 / \texttt{Infinix\_X650C}, MediaTek Helio~P22 MT6765 octa-core Cortex-A53 up to 2.0\,GHz, PowerVR Rogue GE8320 GPU, 3.7\,GB RAM, Android~9 / API~28) because constrained CPU, memory, and I/O budgets expose framework overheads that flagship silicon can mask. While the harness supports multi-tier mid/flagship Android evaluation, unplugged energy measurement, and optional iOS ports, EXP-001 executes the complete matrix exclusively on \texttt{dev-infinix-x650c} under tethered USB debugging.
 \end{enumerate}
 
 \begin{table}[t]
-\caption{Full-Factorial Experimental Design Matrix}
+\caption{Full-Factorial Experimental Design Matrix (EXP-001)}
 \label{tab:factors}
 \centering
+\resizebox{\columnwidth}{!}{
 \begin{tabular}{ll}
 \toprule
 \textbf{Factor} & \textbf{Evaluated Levels} \\
 \midrule
-Platform & Flutter (Dart 3.12.2), Android Native (Kotlin 1.9.24) \\
+Platform & Flutter~3.44.5 (Dart~3.12.2 AOT), Native Android (Kotlin~1.9.24, R8) \\
+Device (Tier) & \texttt{dev-infinix-x650c}: Helio P22 MT6765, PowerVR GE8320, 3.7\,GB, API~28 (low) \\
 Models & MobileNetV3-Large, EfficientDet-Lite0, MobileBERT-QA \\
-Tasks & Image Classification, Object Detection, SQuAD 1.1 QA \\
-Precision & FP32 (single precision), INT8 (quantized) \\
-Delegates & CPU (4 threads, XNNPACK), GPU, NNAPI \\
-Sessions & 8 independent sessions per configuration \\
-Iterations & 20 warm-up + 100 measured per session \\
-Canonical Inputs & 50 standardized images, 50 standardized text pairs \\
+Tasks & Image Classification, Object Detection, SQuAD~1.1 QA \\
+Precision & FP32 (single precision), INT8 (post-training quantized) \\
+Delegates & CPU (XNNPACK), GPU (\texttt{GpuDelegateV2} / Factory), NNAPI (Native only) \\
+Sessions & 8 independent alternating sessions per configuration (36 configs/session) \\
+Iterations & 20 warm-up + 100 measured per run; 10 alternating cold-launch/idle trials \\
+Canonical Inputs & 50 deterministic JPEGs (vision), 50 SQuAD token tuples (NLP) \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
-\subsection{Benchmark Applications and Parity Contract}
-Ensuring strict parity between cross-platform and native code is essential to guarantee that measured differentials reflect framework overhead rather than implementation divergence. Both benchmark applications strictly adhere to the \textit{Harness Contract}:
+\subsection{Benchmark Harnesses, Parity Contract, and Runtime Packaging Audit}
+To ensure differences reflect software stack semantics rather than diverging workloads, both Android harnesses adhere strictly to a shared \textit{Harness Contract}:
 \begin{itemize}
-    \item \textbf{Identical Runtime Engine:} Both applications link against Google LiteRT 2.16.1 (ADR-0002, ADR-0008). Flutter binds to the native shared C library via Dart FFI (`tflite\_flutter`), while Android Native binds via JNI.
-    \item \textbf{Cryptographic Model Verification:} Model flatbuffer files (`*.tflite`) are pre-registered with cryptographic SHA-256 digests in `models/manifest.yaml`. At application initialization, both apps compute the runtime digest of the asset binary and abort execution if any hash discrepancy exists.
-    \item \textbf{Standardized Input Sequence:} Both applications bundle identical asset sets (50 vision JPEGs and 50 text question/context pairs), processed in identical deterministic sequential order.
-    \item \textbf{Realistic Developer Path:} In adherence to real-world software engineering practices, Flutter performs input image decoding and bilinear resizing using the pure Dart `image` package, representing typical Flutter application architecture. Android Native uses Android framework bitmap decoding.
-    \item \textbf{Timed Region Isolation:} In accordance with contract specifications, no logging, disk I/O, garbage collection triggers, or UI allocations occur within the measured pipeline timestamps $t_0 \dots t_3$. Measurement records are buffered in heap memory and flushed to disk asynchronously after configuration completion.
-    \item \textbf{Release Optimization:} All measurements are obtained exclusively from release-mode binaries (`flutter build apk --release` and Android R8-optimized release APKs). Debug builds (which employ JIT compilation) are strictly excluded.
+    \item \textbf{Cryptographic Model Verification:} All six model flatbuffers (\texttt{*.tflite}, totaling $54.74$\,MB; Table~\ref{tab:models}) are pinned by SHA-256 digest in \texttt{models/manifest.yaml}. Both apps verify asset hashes prior to benchmarking and abort on mismatch. Functional correctness is continuously audited via per-input \texttt{output\_digest} logging (top-1 predicted index, detection box count $\ge 0.5$, or extracted answer token span), achieving 100\% agreement across all 500 comparable shared configuration--input pairs ($50/50$ in all 10 shared configs).
+    \item \textbf{Standardized Inputs and Idiomatic Developer Path:} Both apps bundle identical 50 vision JPEGs and 50 SQuAD~1.1 text pairs executed sequentially. Reflecting idiomatic production development, Flutter decodes JPEG images and performs bilinear resizing and normalization in pure Dart (\texttt{image}~4.3.0), whereas Native Android uses framework \texttt{BitmapFactory} / \texttt{Bitmap.createScaledBitmap}.
+    \item \textbf{Timed Region Isolation and Release Compilation:} No disk I/O, logging, or forced garbage collection occurs inside measured timestamps $t_0 \dots t_3$; records buffer in memory and flush as JSONL files post-configuration. Both binaries compile exclusively in release mode (\texttt{flutter build apk --release}; R8-minified APK) after verifying UI responsiveness via microtask yields.
+    \item \textbf{Runtime Binary and Configuration Audit (ADR-0009):} Per ADR-0008, both harnesses targeted TensorFlow Lite~2.16.1, logging \texttt{runtime\_version: 2.16.1} in JSONL headers. However, post-build APK disassembly revealed three consequential ecosystem divergences inherent to default \texttt{pub.dev} versus Maven dependencies: (1)~Native Android links \texttt{org.tensorflow:tensorflow-lite:2.16.1} (\texttt{libtensorflowlite\_jni.so}, $3.40$\,MB on \texttt{arm64-v8a}) with \texttt{setNumThreads(4).setUseXNNPACK(true)}, whereas Flutter's \texttt{tflite\_flutter}~0.12.1 resolves \texttt{com.google.ai.edge.litert:litert:1.4.0} (\texttt{2.20.0} C library, $4.32$\,MB) and initializes \texttt{XNNPackDelegate()} with \texttt{nullptr} options alongside \texttt{threads=4}, resulting in predominantly single-thread CPU execution in Flutter versus multi-core Native execution; (2)~\texttt{tflite\_flutter} exposes no Dart FFI wrapper for NNAPI, emitting schema-compliant \texttt{status: "unsupported"} on all 6 NNAPI configurations, while PowerVR GE8320 rejects \texttt{mobilenetv3\_large} GPU acceleration on both stacks; and (3)~\texttt{Interpreter.fromAsset()} loads assets via Dart \texttt{rootBundle} into an unfreed \texttt{calloc<Uint8>} C buffer in \texttt{Model.fromBuffer()}, whereas Native maps the asset cleanly via read-only \texttt{FileChannel.map()}. Consistent with CLAUDE integrity rules, raw EXP-001 measurements were kept immutable and this mechanism is analyzed explicitly rather than masked.
 \end{itemize}
-
-\subsection{Pipeline Stage Definitions and Metric Formalism}
-To isolate the precise origin of cross-platform overhead, we instrument each iteration across four discrete timestamps:
-\begin{equation}
-t_0 \xrightarrow{\text{preprocess}} t_1 \xrightarrow{\text{invoke}} t_2 \xrightarrow{\text{postprocess}} t_3
-\end{equation}
-where $t_0$ marks the availability of the raw asset in memory, $t_1$ marks input tensor buffer completion, $t_2$ marks the completion of the runtime `run()` invocation, and $t_3$ marks the production of the typed result object.
-
-The individual latency metrics are formally defined as:
-\begin{align}
-\text{preprocess\_ms} &= \frac{t_1 - t_0}{10^6} \quad (\text{ms}) \\
-\text{inference\_ms} &= \frac{t_2 - t_1}{10^6} \quad (\text{ms}) \\
-\text{postprocess\_ms} &= \frac{t_3 - t_2}{10^6} \quad (\text{ms}) \\
-\text{end\_to\_end\_ms} &= \frac{t_3 - t_0}{10^6} \quad (\text{ms})
-\end{align}
-
-\textbf{Boundary Overhead Measurement (ADR-0006):} The total invocation latency ($\text{inference\_ms}$) perceived by application code wraps input buffer copying, foreign function call transitions, kernel execution, and output buffer extraction. To isolate the pure kernel inference time, we interrogate the runtime's internal invoke timer:
-\begin{equation}
-\text{inference\_native\_ms} = \begin{cases}
-\frac{\text{lastNativeInferenceDurationMicroSeconds}}{1000} & \text{(Flutter)} \\[4pt]
-\frac{\text{lastNativeInferenceDurationNanoseconds}}{10^6} & \text{(Native)}
-\end{cases}
-\end{equation}
-We derive the language-boundary marshalling overhead directly as:
-\begin{equation}
-\text{boundary\_overhead\_ms} = \text{inference\_ms} - \text{inference\_native\_ms}
-\end{equation}
-A timer residual check $\text{timer\_residual\_ms} = \text{end\_to\_end\_ms} - (\text{pre} + \text{inf} + \text{post})$ is monitored to verify timestamp continuity.
-
-\textbf{System Resource Metrics:} Total memory consumption is recorded as Proportional Set Size ($\text{pss\_mb}$) via Android's `ActivityManager.getProcessMemoryInfo()`. Process CPU utilization ($\text{cpu\_pct}$) is computed via user and system execution time deltas in `/proc/self/stat`. Thermal throttling states ($\text{thermal\_status}$) are tracked via `PowerManager.getCurrentThermalStatus()`.
 
 \begin{table*}[t]
 \caption{Model Registry and Cryptographic Integrity Specifications}
 \label{tab:models}
 \centering
+\resizebox{\textwidth}{!}{
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Model ID} & \textbf{Task} & \textbf{Input Shape} & \textbf{Precision} & \textbf{Size (MB)} & \textbf{SHA-256 Checksum} & \textbf{Source Reference} \\
 \midrule
-mobilenetv3\_large & Classification & $[1, 224, 224, 3]$ & FP32 & 21.89 & \texttt{f924c190e9112c7db6630ab522c8fb2972be408180d2d72b8038e1a2340b2266} & Howard et al.~\cite{howard2019searching} \\
-mobilenetv3\_large & Classification & $[1, 224, 224, 3]$ & INT8 & 5.67 & \texttt{1d76f35adb879b2cde9fe39000ede3d36e6d317027799c6d0927570a22c1e8d1} & Jacob et al.~\cite{jacob2018quantization} \\
-efficientdet\_lite0 & Detection & $[1, 320, 320, 3]$ & FP32 & 1.62 & \texttt{70ae8c44c4e00b62c53557405e40c719632a503dbd49703df2bf30da96bf43ab} & Tan et al.~\cite{tan2020efficientdet} \\
-efficientdet\_lite0 & Detection & $[1, 320, 320, 3]$ & INT8 & 0.42 & \texttt{70c5d02357c568d512d76125eef7d687f58a1a9514c301fd25b22675fc910c95} & Tan et al.~\cite{tan2020efficientdet} \\
-mobilebert\_qa & Question Ans. & $[1, 384]$ & FP32 & 20.09 & \texttt{10358b8795d14a18c5fc4ba1eebe11fd4331109b155cca9bf013877d1b2cfa60} & Sun et al.~\cite{sun2020mobilebert} \\
-mobilebert\_qa & Question Ans. & $[1, 384]$ & INT8 & 5.06 & \texttt{79471b95588d440ee959f19b275667187dc134ee2be426c30f34ea02972360f7} & Sun et al.~\cite{sun2020mobilebert} \\
+\texttt{mobilenetv3\_large} & Classification & $[1, 224, 224, 3]$ & FP32 & 21.89 & \texttt{f924c190e9112c7db6630ab522c8fb2972be408180d2d72b8038e1a2340b2266} & Howard et al.~\cite{howard2019searching} \\
+\texttt{mobilenetv3\_large} & Classification & $[1, 224, 224, 3]$ & INT8 & 5.67 & \texttt{1d76f35adb879b2cde9fe39000ede3d36e6d317027799c6d0927570a22c1e8d1} & Jacob et al.~\cite{jacob2018quantization} \\
+\texttt{efficientdet\_lite0} & Detection & $[1, 320, 320, 3]$ & FP32 & 1.62 & \texttt{70ae8c44c4e00b62c53557405e40c719632a503dbd49703df2bf30da96bf43ab} & Tan et al.~\cite{tan2020efficientdet} \\
+\texttt{efficientdet\_lite0} & Detection & $[1, 320, 320, 3]$ & INT8 & 0.42 & \texttt{70c5d02357c568d512d76125eef7d687f58a1a9514c301fd25b22675fc910c95} & Tan et al.~\cite{tan2020efficientdet} \\
+\texttt{mobilebert\_qa} & Question Ans. & $[1, 384]$ & FP32 & 20.09 & \texttt{10358b8795d14a18c5fc4ba1eebe11fd4331109b155cca9bf013877d1b2cfa60} & Sun et al.~\cite{sun2020mobilebert} \\
+\texttt{mobilebert\_qa} & Question Ans. & $[1, 384]$ & INT8 & 5.06 & \texttt{79471b95588d440ee959f19b275667187dc134ee2be426c30f34ea02972360f7} & Sun et al.~\cite{sun2020mobilebert} \\
 \bottomrule
 \end{tabular}
+}
 \end{table*}
 
-\subsection{Experimental Protocol and Environmental Controls}
-Measurement sessions follow a strict execution regimen to eliminate thermal and operating system noise:
-\begin{enumerate}
-    \item \textbf{Device Conditioning:} Devices are charged between 50\% and 90\%, switched to Airplane Mode with Wi-Fi, Bluetooth, and GPS disabled. Screen brightness is fixed at 50\%, and display sleep is prevented via wake locks.
-    \item \textbf{Randomized Execution Order:} For each of the 8 sessions, configuration ordering is shuffled using a deterministic linear congruential generator initialized with seed $S = 20261109 + \text{session}$, eliminating systematic sequence bias.
-    \item \textbf{Thermal Gating and Mandatory Cooldown:} Before initiating each configuration, the runner verifies that $\text{thermal\_status} \le \text{light}$. Following each configuration, a mandatory 60-second cooldown is enforced. Any session encountering $\text{thermal\_status} \ge \text{severe}$ is quarantined and excluded.
-    \item \textbf{Warm-Up Discard:} Each configuration executes 20 initial warm-up iterations to stabilize dynamic voltage and frequency scaling (DVFS) and instruction caches, followed by 100 timed measurement iterations.
-\end{enumerate}
+\subsection{Pipeline Stage Definitions and Resource/Startup Metrics}
+Each iteration instruments four monotonic nanosecond/microsecond boundaries:
+\begin{equation}
+t_0 \xrightarrow{\text{preprocess}} t_1 \xrightarrow{\text{invoke}} t_2 \xrightarrow{\text{postprocess}} t_3
+\end{equation}
+yielding $\text{preprocess\_ms} = (t_1 - t_0)/10^6$, $\text{inference\_ms} = (t_2 - t_1)/10^6$, $\text{postprocess\_ms} = (t_3 - t_2)/10^6$, and independently bracketed $\text{end\_to\_end\_ms} = (t_3 - t_0)/10^6$. Timestamp continuity $\text{timer\_residual\_ms} = \text{end\_to\_end\_ms} - (\text{pre} + \text{inf} + \text{post})$ held at median $0.000$\,ms (max $|r| = 0.001$\,ms) across all 19,200 measured iterations.
 
-\subsection{Statistical Unit of Analysis and Hypothesis Testing}
-A common error in mobile systems benchmarking is treating consecutive iterations within a single process execution as independent replicates, which inflates sample size and produces artificially deflated $p$-values (pseudo-replication).
+\textbf{Boundary Overhead (ADR-0006):} Because \texttt{inference\_ms} wraps Dart/Kotlin tensor copying and wrapper bookkeeping around runtime dispatch, pure kernel execution is extracted via the runtime wrapper's native timer:
+\begin{equation}
+\text{inference\_native\_ms} = \begin{cases}
+\text{lastNativeInferenceDurationMicroSeconds}/10^3 & \text{(Flutter)} \\
+\text{lastNativeInferenceDurationNanoseconds}/10^6 & \text{(Native)}
+\end{cases}
+\end{equation}
+with language-boundary marshalling derived as $\text{boundary\_overhead\_ms} = \text{inference\_ms} - \text{inference\_native\_ms}$.
 
-Following ADR-0007, our primary unit of analysis is the \textbf{session median}:
+\textbf{Memory, CPU, Startup, and Footprint:} Active process Proportional Set Size (\texttt{pss\_mb}) is sampled via \texttt{Debug.MemoryInfo.getTotalPss()} (reporting KiB divided by $1024.0$, i.e., MiB under schema field \texttt{pss\_mb}), while CPU utilization (\texttt{cpu\_pct}, normalized to one core and exceeding 100\% across multiple cores) comes from \texttt{/proc/self/stat} tick deltas and \texttt{thermal\_status} from \texttt{PowerManager}. Model initialization (\texttt{model\_load\_ms}, covering interpreter creation, delegate setup, and \texttt{allocateTensors()}) is recorded on iteration~0 of every warm-up phase ($n = 192$ retained runs). Independently, process cold-start latency (\texttt{am start -W TotalTime} and \texttt{WaitTime}) and settled idle memory (\texttt{dumpsys meminfo TOTAL} at 2\,s post-launch, zero models loaded) were captured over $n = 10$ alternating force-stopped launches per APK and archived as \texttt{app\_baseline} JSONLs. APK and \texttt{.tflite} file sizes use SI decimal megabytes ($1\,\text{MB} = 10^6$\,B) and are decomposed by zip entry to separate universal multi-ABI packaging from fair \texttt{arm64-v8a} single-ABI footprints (ADR-0009).
+
+\subsection{Execution Protocol, Data Hygiene, and Statistical Analysis}
+Measurements were executed over 8 sessions on \texttt{dev-infinix-x650c} under fixed display wake-lock and background radio lockdown, alternating platform execution order (odd sessions: Flutter first; even sessions: Native first) and shuffling the 18 configurations deterministically via seed $S = 20261109 + \text{session}$ with mandatory 60\,s inter-run cooldowns. All 23,180 kept records remained at \texttt{thermal\_status = none}.
+
+From 283 raw JSONL files (24,020 records: 23,980 benchmark + 40 \texttt{app\_baseline}), we audited and excluded via version-controlled \texttt{data/exclusions.yaml} seven Native runs (840 records across Sessions~2--7) where a MediaTek/Android~9 clock-delta glitch emitted a $9223372036854776$\,ms (\texttt{Long.MAX\_VALUE}$/10^6$) sentinel across timestamps. Including four initial Session-1 Native INT8 schema/dtype errors (remediated prior to Session~2), four missing Session-3 Native runs, three missing unsupported Session-1 Flutter runs, and 96 \texttt{unsupported} delegate markers, 23,180 kept records yield 19,200 measured iterations ($11,200$ Native; $8,000$ Flutter), 3,840 warm-up iterations, and 40 baseline records. Following ADR-0007, the unit of inferential analysis is the \textbf{session median}:
 \begin{equation}
 \tilde{X}_{c, s} = \operatorname{median}_{i=1 \dots 100} \{ x_{c, s, i} \}
 \end{equation}
-yielding $n_F = 8$ and $n_N = 8$ independent replicates per configuration $c$ for Flutter and Native Android respectively. For cold-start latency, each process invocation represents an independent launch and serves as the analysis unit.
-
-For each configuration and metric, we assess significance using the two-sided Mann--Whitney $U$ test. To quantify effect magnitude without parametric assumptions, we compute Cliff's delta ($\delta$)~\cite{cliff1993dominance}:
-\begin{equation}
-\delta = \frac{\#(\tilde{X}_F > \tilde{Y}_N) - \#(\tilde{X}_F < \tilde{Y}_N)}{n_F \cdot n_N}
-\end{equation}
-accompanied by the median ratio $\mathcal{R} = \operatorname{median}(\tilde{X}_F) / \operatorname{median}(\tilde{Y}_N)$ with 10,000-resample bootstrap 95\% confidence intervals.
-
-Family-wise error rates are controlled across multiple comparisons using the Holm--Bonferroni procedure~\cite{holm1979simple} applied within each research question family at $\alpha = 0.05$. We establish a pre-registered criterion for \textit{practical significance}:
-\begin{equation}
-|\delta| \ge 0.33 \quad \text{AND} \quad \text{CI}_{95\%}(\mathcal{R}) \cap [0.95, 1.05] = \emptyset
-\end{equation}
-requiring at least a medium effect size and a bootstrap ratio entirely outside the $\pm 5\%$ equivalence band.
+yielding $n_F = 8$ and $n_N \in \{5, 7, 8\}$ independent replicates across the 10 mutually supported configurations (collapsing duplicate Session-7 Native runs per config into a single session median), plus $n = 10$ independent cold launches per platform. For each comparison, we run two-sided Mann--Whitney~$U$ tests with Holm--Bonferroni correction within each RQ family ($\alpha = 0.05$), Cliff's dominance $\delta$~\cite{cliff1993dominance}, and 10,000-resample bootstrap 95\% confidence intervals on the median ratio $\mathcal{R} = \operatorname{median}(\tilde{X}_F) / \operatorname{median}(\tilde{Y}_N)$. Practical significance requires both $|\delta| \ge 0.33$ and $\text{CI}_{95\%}(\mathcal{R}) \cap [0.95, 1.05] = \emptyset$.
