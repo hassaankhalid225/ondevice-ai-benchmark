@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import '../config/benchmark_config.dart';
 import '../export/jsonl_exporter.dart';
@@ -13,6 +15,21 @@ class BenchmarkRunner {
 
   BenchmarkRunner({this.onLog});
 
+  Future<File> _prepareModelFile(String assetPath, String fileName) async {
+    final supportDir = await getApplicationSupportDirectory();
+    final modelDir = Directory('${supportDir.path}/exp002_models');
+    if (!await modelDir.exists()) {
+      await modelDir.create(recursive: true);
+    }
+    final outFile = File('${modelDir.path}/$fileName');
+    final byteData = await rootBundle.load(assetPath);
+    final bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+    if (!await outFile.exists() || await outFile.length() != bytes.length) {
+      await outFile.writeAsBytes(bytes, flush: true);
+    }
+    return outFile;
+  }
+
   Future<File> runConfiguration(BenchmarkConfig config) async {
     final runId = '${DateTime.now().millisecondsSinceEpoch}';
     final exporter = JsonlExporter(config: config);
@@ -21,7 +38,10 @@ class BenchmarkRunner {
     final modelAssetPath = isInt8 ? spec.int8File : spec.fp32File;
     final expectedSha256 = isInt8 ? spec.int8Sha256 : spec.fp32Sha256;
 
-    onLog?.call('[RUN] Starting ${config.modelId} (${config.precision}, ${config.delegate}) session ${config.session}');
+    onLog?.call(
+      '[RUN] Starting ${config.modelId} (${config.precision}, ${config.delegate}, '
+      '${config.threads}t, loader=${config.loader}) session ${config.session}',
+    );
 
     // 1. Verify model hash parity (contract §1)
     final verified = await BenchmarkRegistry.verifyAssetSha256(modelAssetPath, expectedSha256);
@@ -52,23 +72,49 @@ class BenchmarkRunner {
       }
     }
 
+    // Extract model bytes before load timing when using zero-copy file mmap control (EXP-002 Priority 1.2)
+    File? preparedModelFile;
+    if (config.loader == 'file') {
+      preparedModelFile = await _prepareModelFile(
+        modelAssetPath,
+        '${config.modelId}_${config.precision}.tflite',
+      );
+    }
+
     // 3. Delegate & Interpreter creation
     final options = InterpreterOptions()..threads = config.threads;
+    GpuDelegateOptionsV2? gpuOptions;
+    GpuDelegateV2? gpuDelegate;
+    XNNPackDelegateOptions? xnnpackOptions;
+    XNNPackDelegate? xnnpackDelegate;
+
+    void disposeDelegateResources() {
+      xnnpackDelegate?.delete();
+      xnnpackDelegate = null;
+      xnnpackOptions?.delete();
+      xnnpackOptions = null;
+      gpuDelegate?.delete();
+      gpuDelegate = null;
+      gpuOptions?.delete();
+      gpuOptions = null;
+      options.delete();
+    }
 
     try {
       if (config.delegate == 'gpu') {
-        final gpuDelegate = GpuDelegateV2(
-          options: GpuDelegateOptionsV2(
-            isPrecisionLossAllowed: config.precision == 'fp16' || config.precision == 'int8',
-          ),
+        gpuOptions = GpuDelegateOptionsV2(
+          isPrecisionLossAllowed: config.precision == 'fp16' || config.precision == 'int8',
         );
-        options.addDelegate(gpuDelegate);
+        gpuDelegate = GpuDelegateV2(options: gpuOptions);
+        options.addDelegate(gpuDelegate!);
       } else if (config.delegate == 'cpu') {
-        final xnnpack = XNNPackDelegate();
-        options.addDelegate(xnnpack);
+        xnnpackOptions = XNNPackDelegateOptions(numThreads: config.threads);
+        xnnpackDelegate = XNNPackDelegate(options: xnnpackOptions);
+        options.addDelegate(xnnpackDelegate!);
       } else if (config.delegate == 'nnapi') {
-        const msg = 'NNAPI delegate is unsupported in tflite_flutter 0.10.4 Dart bindings';
+        const msg = 'NNAPI delegate is unsupported in tflite_flutter 0.12.1 Dart bindings';
         onLog?.call('[WARN] $msg');
+        disposeDelegateResources();
         exporter.addRecord(
           BenchmarkRecord(
             session: config.session,
@@ -83,6 +129,7 @@ class BenchmarkRunner {
     } catch (e) {
       final msg = 'Delegate initialization unsupported: $e';
       onLog?.call('[WARN] $msg');
+      disposeDelegateResources();
       exporter.addRecord(
         BenchmarkRecord(
           session: config.session,
@@ -99,10 +146,13 @@ class BenchmarkRunner {
     final loadSw = Stopwatch()..start();
     Interpreter interpreter;
     try {
-      interpreter = await Interpreter.fromAsset(modelAssetPath, options: options);
+      interpreter = config.loader == 'file'
+          ? Interpreter.fromFile(preparedModelFile!, options: options)
+          : await Interpreter.fromAsset(modelAssetPath, options: options);
     } catch (e) {
       final msg = 'Interpreter creation unsupported for delegate ${config.delegate}: $e';
       onLog?.call('[WARN] $msg');
+      disposeDelegateResources();
       exporter.addRecord(
         BenchmarkRecord(
           session: config.session,
@@ -232,6 +282,7 @@ class BenchmarkRunner {
       );
     } finally {
       interpreter.close();
+      disposeDelegateResources();
     }
 
     final resultFile = await exporter.flushToFile();

@@ -78,7 +78,7 @@ class JsonlExporter(
                     put("build_mode", "release")
                     put("platform", config.platform)
                     put("runtime", "litert")
-                    put("runtime_version", "2.16.1")
+                    put("runtime_version", "2.20.0")
                     put("model_id", config.modelId)
                     put("model_sha256", modelSha256)
                     put("precision", config.precision)

@@ -3,10 +3,14 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-11 · **Current phase:** Paper 1 Revised (10p IEEE, Zero Leaks, 31 Verified Refs) & Ready for `exp-002` · **Protocol:** v0.3.0
+**Last updated:** 2026-11-11 · **Current phase:** `EXP-002` Controlled Harness Ready (`exp-002` branch; Paper 1 frozen on `main` @ `v0.2.0-paper1`) · **Protocol:** v0.3.0
 
 ## Current focus
-Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on `dev-infinix-x650c`), full statistical analysis (`benchkit` with multiplicative non-parametric TOST), and complete **Paper Revision Checklist** across `paper/main.tex`, `paper/sections/*.tex`, and `literature/references.bib` are **complete** and compiled cleanly to an exact **10-page IEEE conference PDF** (`paper/main.pdf`).
+Branch **`exp-002`** implements all instrumentation needed for **Paper Revision Priority 1.1 (`LiteRT 1.4.0` / `2.20.0` matched `1t`/`4t` CPU controls)**, **Priority 1.2 (`Interpreter.fromFile()` `mmap` loader control)**, and **Priority 1.3A (Infinix Smart 7 multi-device onboarding)** while keeping **`main`** (`d1cef89`, tagged `v0.2.0-paper1`) cleanly matched to Paper 1 and `EXP-001`.
+
+- **APK Runtime Parity (`exp-002`):** Both `apps/android_native_bench` and `apps/flutter_bench` release APKs now bundle `com.google.ai.edge.litert:litert:1.4.0` (C library `2.20.0`, verified `4.32 MB` `libtensorflowlite_jni.so`), accept `--ei threads`, `--ez cpuOnly`, and Flutter `--es loader asset|file` flags cleanly, pass explicit `XNNPackDelegateOptions(numThreads: N)`, delete stale per-session `*_sNN.jsonl` files prior to launch, and isolate arm pulls under `data/raw/exp002/<arm>/<device_id>/`.
+- **Completed Baseline (`main` @ `v0.2.0-paper1` / EXP-001):**
+  - Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on `dev-infinix-x650c`), full statistical analysis (`benchkit` with multiplicative non-parametric TOST), and complete **Paper Revision Checklist** across `paper/main.tex`, `paper/sections/*.tex`, and `literature/references.bib` are **complete** and compiled cleanly to an exact **10-page IEEE conference PDF** (`paper/main.pdf`).
 
 - **Device Evaluated:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, PowerVR GE8320, 3.7 GB RAM, Android 9 / API 28; runtime JSONL slug `dev-infinix-mobility-limited-infinix-x650c`).
 - **Completed Dataset & Validation (`data/raw/dev-infinix-x650c/`):**
@@ -27,8 +31,8 @@ Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/i
 3. [x] Audit APKs/dependencies and record ADR-0009; refine `benchkit` tests (`23/23` pass, `ruff` clean).
 4. [x] Revise all paper sections (`paper/sections/*.tex`), `experiments/EXP-001.md`, `docs/`, and `CHANGELOG.md` to final verified EXP-001 numbers (`0` `\todo{}`).
 5. [x] Compile `paper/main.tex` to PDF (`paper/main.pdf`, 10 pages) and visually verify all rendered proof pages (0 errors, 0 Overfull boxes, 31/31 refs resolved, 0 leak hits; Overleaf `pdflatex` path also remains supported).
-6. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 arXiv/conference submission.
-7. [ ] Begin `EXP-002` planning and hardware onboarding: connect **Infinix Smart 7** via ADB (`adb shell getprop` + `/proc/meminfo`) to verify SoC/API level and `BATTERY_PROPERTY_CHARGE_COUNTER` support before registering `docs/04-device-matrix.md`, implement unplugged `energy` and 5-minute `sustained` FPS runner loops plus matched-LiteRT control (`ADR-0010`), and add mid-range / flagship Android devices as available.
+6. [ ] Execute `EXP-002` hardware runs on **Infinix Hot 8** (`dev-infinix-x650c`) and **Infinix Smart 7** per `experiments/EXP-002.md` (`matched_1t`, `matched_4t`, `mmap_4t`, and Smart 7 full suite), validate raw JSONLs, and analyze controlled runtime vs ecosystem effects (`benchkit summarize/compare`).
+7. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 arXiv/conference submission (or fold `EXP-002` results into revised manuscript if running full multi-device update).
 
 ## Phase checklist
 - [x] Phase 0 · Setup (2026-11-09)

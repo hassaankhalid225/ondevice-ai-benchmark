@@ -93,7 +93,7 @@ class JsonlExporter {
         'build_mode': 'release',
         'platform': config.platform,
         'runtime': 'litert',
-        'runtime_version': '2.16.1',
+        'runtime_version': '2.20.0',
         'model_id': config.modelId,
         'model_sha256': modelSha256,
         'precision': config.precision,

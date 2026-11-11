@@ -33,7 +33,7 @@ class BenchmarkRunner(
         val modelAssetPath = if (isInt8) spec.int8File else spec.fp32File
         val expectedSha256 = if (isInt8) spec.int8Sha256 else spec.fp32Sha256
 
-        onLog("[RUN] Starting ${config.modelId} (${config.precision}, ${config.delegate}) session ${config.session}")
+        onLog("[RUN] Starting ${config.modelId} (${config.precision}, ${config.delegate}, ${config.threads}t) session ${config.session}")
 
         // 1. Verify model hash parity (contract §1)
         val verified = BenchmarkRegistry.verifyAssetSha256(context, modelAssetPath, expectedSha256)

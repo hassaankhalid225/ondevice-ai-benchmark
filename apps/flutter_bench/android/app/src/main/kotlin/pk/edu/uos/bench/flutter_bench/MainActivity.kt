@@ -77,7 +77,18 @@ class MainActivity : FlutterActivity() {
                 "getIntentExtras" -> {
                     val session = intent.getIntExtra("session", 1)
                     val autorun = intent.getBooleanExtra("autorun", false)
-                    result.success(mapOf("session" to session, "autorun" to autorun))
+                    val threads = intent.getIntExtra("threads", 4).coerceAtLeast(1)
+                    val cpuOnly = intent.getBooleanExtra("cpuOnly", false)
+                    val loader = intent.getStringExtra("loader") ?: "asset"
+                    result.success(
+                        mapOf(
+                            "session" to session,
+                            "autorun" to autorun,
+                            "threads" to threads,
+                            "cpuOnly" to cpuOnly,
+                            "loader" to loader
+                        )
+                    )
                 }
                 "log" -> {
                     val msg = call.argument<String>("message") ?: ""

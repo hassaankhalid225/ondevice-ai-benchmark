@@ -13,6 +13,7 @@ import pk.edu.uos.bench.nativeandroid.config.BenchmarkConfig
 import pk.edu.uos.bench.nativeandroid.config.BenchmarkRegistry
 import pk.edu.uos.bench.nativeandroid.databinding.ActivityMainBinding
 import pk.edu.uos.bench.nativeandroid.harness.BenchmarkRunner
+import java.io.File
 import java.util.Random
 
 class MainActivity : AppCompatActivity() {
@@ -35,21 +36,37 @@ class MainActivity : AppCompatActivity() {
 
         val session = intent.getIntExtra("session", 1)
         val autorun = intent.getBooleanExtra("autorun", false)
+        val threads = intent.getIntExtra("threads", 4).coerceAtLeast(1)
+        val cpuOnly = intent.getBooleanExtra("cpuOnly", false)
 
         binding.btnStart.setOnClickListener {
-            startBenchmarkSuite(session)
+            startBenchmarkSuite(session, threads, cpuOnly)
         }
 
         if (autorun) {
-            startBenchmarkSuite(session)
+            startBenchmarkSuite(session, threads, cpuOnly)
         }
     }
 
-    private fun startBenchmarkSuite(session: Int) {
+    private fun clearExistingSessionFiles(session: Int) {
+        val outDir = File(applicationContext.getExternalFilesDir(null), "results")
+        if (!outDir.isDirectory) return
+        val suffix = "_s%02d.jsonl".format(session)
+        outDir.listFiles()?.forEach { file ->
+            if (file.isFile && file.name.endsWith(suffix)) {
+                file.delete()
+            }
+        }
+    }
+
+    private fun startBenchmarkSuite(session: Int, threads: Int = 4, cpuOnly: Boolean = false) {
         binding.btnStart.isEnabled = false
-        binding.tvStatus.text = "Status: Running Session $session..."
+        val modeLabel = if (cpuOnly) "cpuOnly, ${threads}t" else "full, ${threads}t"
+        binding.tvStatus.text = "Status: Running Session $session ($modeLabel)..."
 
         scope.launch(Dispatchers.IO) {
+            clearExistingSessionFiles(session)
+
             val runner = BenchmarkRunner(applicationContext) { logLine ->
                 android.util.Log.i("BENCH", logLine)
                 scope.launch(Dispatchers.Main) {
@@ -57,11 +74,11 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // Build all experimental configurations
+            // Build experimental configurations
             val configs = mutableListOf<BenchmarkConfig>()
             val models = listOf("mobilenetv3_large", "efficientdet_lite0", "mobilebert_qa")
             val precisions = listOf("fp32", "int8")
-            val delegates = listOf("cpu", "gpu", "nnapi")
+            val delegates = if (cpuOnly) listOf("cpu") else listOf("cpu", "gpu", "nnapi")
 
             for (m in models) {
                 for (p in precisions) {
@@ -71,6 +88,7 @@ class MainActivity : AppCompatActivity() {
                                 modelId = m,
                                 precision = p,
                                 delegate = d,
+                                threads = threads,
                                 session = session,
                                 cooldownSeconds = 60
                             )
@@ -85,7 +103,7 @@ class MainActivity : AppCompatActivity() {
 
             for (cfg in configs) {
                 withContext(Dispatchers.Main) {
-                    binding.tvStatus.text = "Running: ${cfg.modelId} (${cfg.precision}, ${cfg.delegate})"
+                    binding.tvStatus.text = "Running: ${cfg.modelId} (${cfg.precision}, ${cfg.delegate}, ${cfg.threads}t)"
                 }
                 try {
                     runner.runConfiguration(cfg)

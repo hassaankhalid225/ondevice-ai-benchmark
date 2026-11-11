@@ -163,7 +163,16 @@ def install_apks(serial: str | None = None) -> None:
     print("Flutter APK installed successfully.")
 
 
-def run_single_app(pkg: str, act: str, session: int, serial: str | None = None) -> None:
+def run_single_app(
+    pkg: str,
+    act: str,
+    session: int,
+    serial: str | None = None,
+    *,
+    threads: int = 4,
+    cpu_only: bool = False,
+    loader: str = "asset",
+) -> None:
     """Execute one benchmark app headless session and wait for completion."""
     print(f"\n[RUN] Stopping {pkg}...")
     run_adb(["shell", "am", "force-stop", pkg], device_serial=serial, check=False)
@@ -172,12 +181,18 @@ def run_single_app(pkg: str, act: str, session: int, serial: str | None = None) 
     # Clear logcat
     run_adb(["logcat", "-c"], device_serial=serial, check=False)
 
-    print(f"[RUN] Starting {pkg} Session {session} in autorun mode...")
+    print(
+        f"[RUN] Starting {pkg} Session {session} in autorun mode "
+        f"(threads={threads}, cpuOnly={cpu_only}, loader={loader})..."
+    )
     start_cmd = [
         "shell", "am", "start", "-W",
         "-n", act,
         "--ei", "session", str(session),
         "--ez", "autorun", "true",
+        "--ei", "threads", str(threads),
+        "--ez", "cpuOnly", "true" if cpu_only else "false",
+        "--es", "loader", loader,
     ]
     run_adb(start_cmd, device_serial=serial)
 
@@ -227,31 +242,64 @@ def run_single_app(pkg: str, act: str, session: int, serial: str | None = None) 
         proc.kill()
 
 
-def pull_results(pkg: str, device_id: str, serial: str | None = None) -> list[Path]:
-    """Pull generated JSONL results from device to data/raw/<device_id>/."""
-    dest_dir = RAW_DIR / device_id
+def _resolve_dest_dir(device_id: str, arm: str | None = None) -> Path:
+    """Resolve output directory, keeping EXP-002 arms isolated from EXP-001 data/raw/<device_id>."""
+    if arm:
+        return RAW_DIR / "exp002" / arm / device_id
+    return RAW_DIR / device_id
+
+
+def pull_results(
+    pkg: str,
+    device_id: str,
+    serial: str | None = None,
+    *,
+    arm: str | None = None,
+    session: int | None = None,
+) -> list[Path]:
+    """Pull generated JSONL results from device into raw directory cleanly without cross-arm leaks."""
+    dest_dir = _resolve_dest_dir(device_id, arm=arm)
     dest_dir.mkdir(parents=True, exist_ok=True)
+    staging = dest_dir / ".staging_pull"
+    shutil.rmtree(staging, ignore_errors=True)
+    staging.mkdir(parents=True, exist_ok=True)
 
     dev_results_dir = f"/sdcard/Android/data/{pkg}/files/results"
     print(f"\n[PULL] Pulling results from {dev_results_dir}/. -> {dest_dir}...")
-    run_adb(["pull", f"{dev_results_dir}/.", str(dest_dir.resolve())], device_serial=serial, check=False)
+    run_adb(["pull", f"{dev_results_dir}/.", str(staging.resolve())], device_serial=serial, check=False)
 
-    # Flatten if ADB created a nested results folder
-    nested = dest_dir / "results"
+    # Search both flat staging and nested results folder if adb created one
+    candidates = list(staging.glob("*.jsonl"))
+    nested = staging / "results"
     if nested.is_dir():
-        for f in nested.glob("*.jsonl"):
-            target = dest_dir / f.name
-            if target.exists():
-                target.unlink()
-            f.rename(target)
-        shutil.rmtree(nested, ignore_errors=True)
+        candidates.extend(nested.glob("*.jsonl"))
 
-    pulled = list(dest_dir.glob("*.jsonl"))
+    session_suffix = f"_s{session:02d}.jsonl" if session is not None else None
+    for f in candidates:
+        if session_suffix and not f.name.endswith(session_suffix):
+            continue
+        target = dest_dir / f.name
+        if target.exists():
+            target.unlink()
+        f.rename(target)
+
+    shutil.rmtree(staging, ignore_errors=True)
+    pulled = sorted(dest_dir.glob(f"*{session_suffix}" if session_suffix else "*.jsonl"))
     print(f"[PULL] {len(pulled)} JSONL result files present in {dest_dir}.")
     return pulled
 
 
-def run_session(session: int, device_id: str, serial: str | None = None) -> None:
+def run_session(
+    session: int,
+    device_id: str,
+    serial: str | None = None,
+    *,
+    threads: int = 4,
+    cpu_only: bool = False,
+    loader: str = "asset",
+    arm: str | None = None,
+    platform_filter: str = "both",
+) -> None:
     """Execute a complete session alternating platform order per protocol §4."""
     preflight_check(serial)
 
@@ -262,21 +310,34 @@ def run_session(session: int, device_id: str, serial: str | None = None) -> None
     else:
         order = [("native", NATIVE_PKG, NATIVE_ACT), ("flutter", FLUTTER_PKG, FLUTTER_ACT)]
 
+    if platform_filter in ("flutter", "native"):
+        order = [entry for entry in order if entry[0] == platform_filter]
+
     print("\n=======================================================")
     print(f"  Starting Experiment Session {session} on {device_id}")
+    print(f"  Arm={arm or 'default'} | Threads={threads} | cpuOnly={cpu_only} | Loader={loader}")
     print(f"  Execution Order: {[p[0] for p in order]}")
     print("=======================================================")
 
     for name, pkg, act in order:
         print(f"\n>>> Executing {name.upper()} suite ({pkg}) <<<")
-        run_single_app(pkg, act, session, serial)
-        pull_results(pkg, device_id, serial)
+        run_single_app(
+            pkg,
+            act,
+            session,
+            serial,
+            threads=threads,
+            cpu_only=cpu_only,
+            loader=loader if name == "flutter" else "asset",
+        )
+        pull_results(pkg, device_id, serial, arm=arm, session=session)
 
     print("\n--- Validating Pulled Results ---")
+    dest_dir = _resolve_dest_dir(device_id, arm=arm)
     valid_count = 0
-    all_files = list((RAW_DIR / device_id).glob(f"*_s{session:02d}.jsonl"))
+    all_files = sorted(dest_dir.glob(f"*_s{session:02d}.jsonl"))
     if not all_files:
-        all_files = list((RAW_DIR / device_id).glob("*.jsonl"))
+        all_files = sorted(dest_dir.glob("*.jsonl"))
 
     validator = load_validator()
     for f in all_files:
