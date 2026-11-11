@@ -1,19 +1,12 @@
 \section{Methodology}\label{sec:method}
 
-To isolate the latency, resource, and footprint overheads attributable to the Flutter application layer without confounding algorithmic differences, we implement a controlled, pre-registered experimental protocol (Protocol~v0.3.0) adhering to systems benchmarking standards~\cite{georges2007statistically,barrett2017virtual}.
+Following a protocol fixed prior to data collection and versioned in our public repository (Protocol~v0.3.0, commit~\texttt{dc45f62}), we isolate the latency, resource, and footprint overheads introduced by Flutter without confounding workload semantics~\cite{georges2007statistically,barrett2017virtual}.
 
-\subsection{Experimental Design and Evaluated Hardware Scope}
-Our benchmark protocol defines five experimental factors (summarized in Table~\ref{tab:factors}):
-\begin{enumerate}
-    \item \textbf{Platform ($P$):} Flutter~3.44.5 (Dart~3.12.2 compiled AOT to native ARM machine code, \texttt{tflite\_flutter}~0.12.1) versus Native Android (Kotlin~1.9.24 compiled with R8 full-mode shrinking).
-    \item \textbf{Model ($M$):} Three standard edge architectures spanning image classification, object detection, and question answering: MobileNetV3-Large~\cite{howard2019searching}, EfficientDet-Lite0~\cite{tan2020efficientdet}, and MobileBERT-QA~\cite{sun2020mobilebert}.
-    \item \textbf{Precision ($Q$):} 32-bit floating-point (FP32) and full 8-bit integer post-training quantization (INT8)~\cite{jacob2018quantization}.
-    \item \textbf{Hardware Delegate ($D$):} CPU with XNNPACK acceleration, mobile GPU (OpenCL/OpenGL ES compute shaders), and Android Neural Networks API (NNAPI).
-    \item \textbf{Device Tier ($T$):} Entry-tier Android smartphone hardware (Campaign EXP-001). We select an entry-level handset (\texttt{dev-infinix-x650c}: Infinix Hot~8 / \texttt{Infinix\_X650C}, MediaTek Helio~P22 MT6765 octa-core Cortex-A53 up to 2.0\,GHz, PowerVR Rogue GE8320 GPU, 3.7\,GB RAM, Android~9 / API~28) because constrained CPU, memory, and I/O budgets expose framework overheads that flagship silicon can mask. While the harness supports multi-tier mid/flagship Android evaluation, unplugged energy measurement, and optional iOS ports, EXP-001 executes the complete matrix exclusively on \texttt{dev-infinix-x650c} under tethered USB debugging.
-\end{enumerate}
+\subsection{Experimental Design and Hardware Scope}
+We evaluate four experimental factors (Table~\ref{tab:factors}) on a single entry-tier Android smartphone---the Infinix Hot~8 (\texttt{Infinix\_X650C}, MediaTek Helio~P22 MT6765 octa-core Cortex-A53 up to $2.0$\,GHz, PowerVR Rogue GE8320 GPU, $3.7$\,GB RAM, Android~9 / API~28). Entry-tier silicon intentionally magnifies memory, decoding, and boundary overheads that flagship SoCs can obscure. On API~28, Flutter~3.44.5's Impeller renderer falls back from Vulkan to OpenGL~ES~\cite{flutterimpeller2025}, and vendor NNAPI HAL support is limited, bounding generalization strictly to this entry-tier profile.
 
 \begin{table}[t]
-\caption{Full-Factorial Experimental Design Matrix (EXP-001)}
+\caption{Full-Factorial Design on the Device (Infinix Hot~8, Android~9)}
 \label{tab:factors}
 \centering
 \resizebox{\columnwidth}{!}{
@@ -21,72 +14,128 @@ Our benchmark protocol defines five experimental factors (summarized in Table~\r
 \toprule
 \textbf{Factor} & \textbf{Evaluated Levels} \\
 \midrule
-Platform & Flutter~3.44.5 (Dart~3.12.2 AOT), Native Android (Kotlin~1.9.24, R8) \\
-Device (Tier) & \texttt{dev-infinix-x650c}: Helio P22 MT6765, PowerVR GE8320, 3.7\,GB, API~28 (low) \\
-Models & MobileNetV3-Large, EfficientDet-Lite0, MobileBERT-QA \\
-Tasks & Image Classification, Object Detection, SQuAD~1.1 QA \\
-Precision & FP32 (single precision), INT8 (post-training quantized) \\
-Delegates & CPU (XNNPACK), GPU (\texttt{GpuDelegateV2} / Factory), NNAPI (Native only) \\
-Sessions & 8 independent alternating sessions per configuration (36 configs/session) \\
-Iterations & 20 warm-up + 100 measured per run; 10 alternating cold-launch/idle trials \\
-Canonical Inputs & 50 deterministic JPEGs (vision), 50 SQuAD token tuples (NLP) \\
+Platform ($P$) & Flutter~3.44.5 (Dart~3.12.2 AOT), Native Android (Kotlin~1.9.24, R8) \\
+Models ($M$) & MobileNetV3-L (Classif.), EfficientDet-L0 (Detect.), MobileBERT-QA \\
+Precision ($Q$) & FP32 (32-bit float), INT8 (full integer quantization) \\
+Delegates ($D$) & CPU (XNNPACK), GPU (OpenCL/GLES), NNAPI (Native only) \\
+Protocol & 8 alternating sessions; 20 warm-up + 100 measured; 50 fixed inputs \\
+Baselines & 10 alternating cold launches and 2\,s settled idle PSS trials/stack \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
-\subsection{Benchmark Harnesses, Parity Contract, and Runtime Packaging Audit}
-To ensure differences reflect software stack semantics rather than diverging workloads, both Android harnesses adhere strictly to a shared \textit{Harness Contract}:
+\subsection{Benchmark Harnesses and Parity Contract}
+Both Android applications enforce a symmetric \textit{Harness Contract}:
 \begin{itemize}
-    \item \textbf{Cryptographic Model Verification:} All six model flatbuffers (\texttt{*.tflite}, totaling $54.74$\,MB; Table~\ref{tab:models}) are pinned by SHA-256 digest in \texttt{models/manifest.yaml}. Both apps verify asset hashes prior to benchmarking and abort on mismatch. Functional correctness is continuously audited via per-input \texttt{output\_digest} logging (top-1 predicted index, detection box count $\ge 0.5$, or extracted answer token span), achieving 100\% agreement across all 500 comparable shared configuration--input pairs ($50/50$ in all 10 shared configs).
-    \item \textbf{Standardized Inputs and Idiomatic Developer Path:} Both apps bundle identical 50 vision JPEGs and 50 SQuAD~1.1 text pairs executed sequentially. Reflecting idiomatic production development, Flutter decodes JPEG images and performs bilinear resizing and normalization in pure Dart (\texttt{image}~4.3.0), whereas Native Android uses framework \texttt{BitmapFactory} / \texttt{Bitmap.createScaledBitmap}.
-    \item \textbf{Timed Region Isolation and Release Compilation:} No disk I/O, logging, or forced garbage collection occurs inside measured timestamps $t_0 \dots t_3$; records buffer in memory and flush as JSONL files post-configuration. Both binaries compile exclusively in release mode (\texttt{flutter build apk -{}-release}; R8-minified APK) after verifying UI responsiveness via microtask yields.
-    \item \textbf{Runtime Binary and Configuration Audit (ADR-0009):} Per ADR-0008, both harnesses targeted TensorFlow Lite~2.16.1, logging \texttt{runtime\_version: 2.16.1} in JSONL headers. However, post-build APK disassembly revealed three consequential ecosystem divergences inherent to default \texttt{pub.dev} versus Maven dependencies: (1)~Native Android links \texttt{org.tensorflow:\allowbreak tensorflow-lite:2.16.1} (\texttt{libtensorflowlite\_jni.so}, $3.40$\,MB on \texttt{arm64-v8a}) with \texttt{setNumThreads(4).\allowbreak setUseXNNPACK(true)}, whereas Flutter's \texttt{tflite\_flutter}~0.12.1 resolves \texttt{com.google.ai.edge.litert:\allowbreak litert:1.4.0} (\texttt{2.20.0} C library, $4.32$\,MB) and initializes \texttt{XNNPackDelegate()} with \texttt{nullptr} options alongside \texttt{threads=4}, resulting in predominantly single-thread CPU execution in Flutter versus multi-core Native execution; (2)~\texttt{tflite\_flutter} exposes no Dart FFI wrapper for NNAPI, emitting schema-compliant \texttt{status: "unsupported"} on all 6 NNAPI configurations, while PowerVR GE8320 rejects \texttt{mobilenetv3\_large} GPU acceleration on both stacks; and (3)~\texttt{Interpreter.fromAsset()} loads assets via Dart \texttt{rootBundle} into an unfreed \texttt{calloc<Uint8>} C buffer in \texttt{Model.fromBuffer()}, whereas Native maps the asset cleanly via read-only \texttt{FileChannel.map()}. Consistent with CLAUDE integrity rules, raw EXP-001 measurements were kept immutable and this mechanism is analyzed explicitly rather than masked.
+    \item \textbf{Cryptographic Pinning and Functional Parity:} All six model flatbuffers (total $54.74$\,MB; Table~\ref{tab:models}) are verified at startup via full 64-character SHA-256 digests archived in the repository manifest, aborting on mismatch. Per-input output digests (top-1 index, box count at $\ge 0.5$ confidence, or answer token span) matched $50/50$ inputs across all $10$ mutually supported configurations ($500/500$ agreement).
+    \item \textbf{Canonical Inputs and Idiomatic Codecs:} Both stacks consume the exact 50 JPEG images and 50 SQuAD token tuples sequentially. Reflecting idiomatic production practice, Flutter decodes JPEG images, resizes bilinearly, and normalizes tensors in pure Dart (\texttt{image}~4.3.0), whereas Native Android invokes framework \texttt{BitmapFactory} and \texttt{Bitmap.createScaledBitmap}.
+    \item \textbf{Timing Isolation and Release Builds:} Disk I/O, logging, and forced GC are excluded from timed sections; records buffer in RAM and flush post-run in release binaries (\texttt{flutter build apk -{}-release} and R8-minified APK).
 \end{itemize}
 
-\begin{table*}[t]
-\caption{Model Registry and Cryptographic Integrity Specifications}
+\begin{table}[t]
+\caption{Model Specifications (8-Char SHA-256 Prefixes; Full Digests in Repo)}
 \label{tab:models}
 \centering
-\resizebox{\textwidth}{!}{
-\begin{tabular}{lllllll}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lllrll}
 \toprule
-\textbf{Model ID} & \textbf{Task} & \textbf{Input Shape} & \textbf{Precision} & \textbf{Size (MB)} & \textbf{SHA-256 Checksum} & \textbf{Source Reference} \\
+\textbf{Model} & \textbf{Input Shape} & \textbf{Prec.} & \textbf{MB} & \textbf{SHA-256} & \textbf{Source} \\
 \midrule
-\texttt{mobilenetv3\_large} & Classification & $[1, 224, 224, 3]$ & FP32 & 21.89 & \texttt{f924c190e9112c7db6630ab522c8fb2972be408180d2d72b8038e1a2340b2266} & Howard et al.~\cite{howard2019searching} \\
-\texttt{mobilenetv3\_large} & Classification & $[1, 224, 224, 3]$ & INT8 & 5.67 & \texttt{1d76f35adb879b2cde9fe39000ede3d36e6d317027799c6d0927570a22c1e8d1} & Jacob et al.~\cite{jacob2018quantization} \\
-\texttt{efficientdet\_lite0} & Detection & $[1, 320, 320, 3]$ & FP32 & 1.62 & \texttt{70ae8c44c4e00b62c53557405e40c719632a503dbd49703df2bf30da96bf43ab} & Tan et al.~\cite{tan2020efficientdet} \\
-\texttt{efficientdet\_lite0} & Detection & $[1, 320, 320, 3]$ & INT8 & 0.42 & \texttt{70c5d02357c568d512d76125eef7d687f58a1a9514c301fd25b22675fc910c95} & Tan et al.~\cite{tan2020efficientdet} \\
-\texttt{mobilebert\_qa} & Question Ans. & $[1, 384]$ & FP32 & 20.09 & \texttt{10358b8795d14a18c5fc4ba1eebe11fd4331109b155cca9bf013877d1b2cfa60} & Sun et al.~\cite{sun2020mobilebert} \\
-\texttt{mobilebert\_qa} & Question Ans. & $[1, 384]$ & INT8 & 5.06 & \texttt{79471b95588d440ee959f19b275667187dc134ee2be426c30f34ea02972360f7} & Sun et al.~\cite{sun2020mobilebert} \\
+MobileNetV3-L & $[1,224,224,3]$ & FP32 & 21.89 & \texttt{f924c190} & \cite{howard2019searching} \\
+MobileNetV3-L & $[1,224,224,3]$ & INT8 & 5.67  & \texttt{1d76f35a} & \cite{jacob2018quantization} \\
+EfficientDet-L0 & $[1,320,320,3]$ & FP32 & 1.62  & \texttt{70ae8c44} & \cite{tan2020efficientdet} \\
+EfficientDet-L0 & $[1,320,320,3]$ & INT8 & 0.42  & \texttt{70c5d023} & \cite{tan2020efficientdet} \\
+MobileBERT-QA & $[1,384]$       & FP32 & 20.09 & \texttt{10358b87} & \cite{sun2020mobilebert} \\
+MobileBERT-QA & $[1,384]$       & INT8 & 5.06  & \texttt{79471b95} & \cite{sun2020mobilebert} \\
 \bottomrule
 \end{tabular}
 }
-\end{table*}
+\end{table}
 
-\subsection{Pipeline Stage Definitions and Resource/Startup Metrics}
-Each iteration instruments four monotonic nanosecond/microsecond boundaries:
+\subsection{Runtime Packaging Differences}\label{subsec:packaging}
+Although both apps initially declared TensorFlow Lite~2.16.1, post-build APK disassembly uncovered three consequential ecosystem divergences inherent to default \texttt{pub.dev} versus Maven dependencies:
+\begin{enumerate}
+    \item \textbf{Upstream Runtime and XNNPACK Thread Drift:} Native pins \texttt{org.tensorflow:\allowbreak tensorflow-lite:2.16.1} ($3.40$\,MB JNI binary on \texttt{arm64-v8a}) with explicit 4-thread XNNPACK (\texttt{setNumThreads(4)}), whereas Flutter's \texttt{tflite\_flutter}~0.12.1 pulls \texttt{com.google.ai.edge.litert:\allowbreak litert:1.4.0} (\texttt{2.20.0} C library, $4.32$\,MB) and initializes \texttt{XNNPackDelegate()} with \texttt{nullptr} options alongside \texttt{threads=4}, causing predominantly single-threaded CPU execution in Flutter versus 4-core Native execution. Raw measurements were kept immutable, and this mechanism is analyzed explicitly rather than masked.
+    \item \textbf{Delegate Coverage Gaps:} \texttt{tflite\_flutter} exposes no Dart FFI NNAPI wrapper, emitting \texttt{unsupported} across all six NNAPI runs, while PowerVR~GE8320 rejects MobileNetV3-Large GPU shaders on both stacks.
+    \item \textbf{Asset Memory Allocation:} Flutter \texttt{Interpreter.fromAsset()} reads assets via Dart \texttt{rootBundle} into an unfreed \texttt{calloc<Uint8>} heap buffer in \texttt{Model.fromBuffer()}, whereas Native maps assets read-only via \texttt{FileChannel.map()} (\texttt{mmap}).
+\end{enumerate}
+
+\subsection{Pipeline Instrumentation and Metric Definitions}
+Each inference brackets monotonic high-resolution timestamps:
 \begin{equation}
-t_0 \xrightarrow{\text{preprocess}} t_1 \xrightarrow{\text{invoke}} t_2 \xrightarrow{\text{postprocess}} t_3
+t_0 \xrightarrow{\;T_{\mathrm{pre}}\;} t_1 \xrightarrow{\;T_{\mathrm{inf}}\;} t_2 \xrightarrow{\;T_{\mathrm{post}}\;} t_3
 \end{equation}
-yielding $\text{preprocess\_ms} = (t_1 - t_0)/10^6$, $\text{inference\_ms} = (t_2 - t_1)/10^6$, $\text{postprocess\_ms} = (t_3 - t_2)/10^6$, and independently bracketed $\text{end\_to\_end\_ms} = (t_3 - t_0)/10^6$. Timestamp continuity $\text{timer\_residual\_ms} = \text{end\_to\_end\_ms} - (\text{pre} + \text{inf} + \text{post})$ held at median $0.000$\,ms (max $|r| = 0.001$\,ms) across all 19,200 measured iterations.
+defining preprocessing $T_{\mathrm{pre}} = t_1 - t_0$, wrapper invoke $T_{\mathrm{inf}} = t_2 - t_1$, postprocessing $T_{\mathrm{post}} = t_3 - t_2$, and end-to-end duration $T_{\mathrm{e2e}} = t_3 - t_0$ (in ms). Because $T_{\mathrm{e2e}}$ and its sub-stages derive from nested timestamps $t_0 \dots t_3$, boundary arithmetic agrees within clock resolution ($\le 0.001$\,ms), confirming no uninstrumented pipeline phases. Pure kernel duration $T_{\mathrm{kernel}}$ is obtained directly from LiteRT's native C timer ($d_{\mu\mathrm{s}}/10^3$ in Flutter; $d_{\mathrm{ns}}/10^6$ in Native), isolating language-boundary marshalling as $T_{\mathrm{bnd}} = T_{\mathrm{inf}} - T_{\mathrm{kernel}}$. Resource and startup metrics (summarized with dataset identifiers in Table~\ref{tab:metrics}) use MiB ($\text{KiB}/1024$) for Android PSS RAM and SI decimal MB ($10^6$\,B) for file sizes decomposed cleanly to the shared \texttt{arm64-v8a} ABI.
 
-\textbf{Boundary Overhead (ADR-0006):} Because \texttt{inference\_ms} wraps Dart/Kotlin tensor copying and wrapper bookkeeping around runtime dispatch, pure kernel execution is extracted via the runtime wrapper's native timer (\texttt{lastNative\-Inference\-Duration\-MicroSeconds}, $d_{\mu\mathrm{s}}$, in Flutter; \texttt{lastNative\-Inference\-Duration\-Nanoseconds}, $d_{\mathrm{ns}}$, in Native):
-\begin{equation}
-\text{inference\_native\_ms} = \begin{cases}
-d_{\mu\mathrm{s}} / 10^3 & \text{(Flutter)} \\
-d_{\mathrm{ns}} / 10^6 & \text{(Native)}
-\end{cases}
-\end{equation}
-with language-boundary marshalling derived as $\text{boundary\_overhead\_ms} = \text{inference\_ms} - \text{inference\_native\_ms}$.
-
-\textbf{Memory, CPU, Startup, and Footprint:} Active process Proportional Set Size (\texttt{pss\_mb}) is sampled via \texttt{Debug.MemoryInfo.getTotalPss()} (reporting KiB divided by $1024.0$, i.e., MiB under schema field \texttt{pss\_mb}), while CPU utilization (\texttt{cpu\_pct}, normalized to one core and exceeding 100\% across multiple cores) comes from \texttt{/proc/self/stat} tick deltas and \texttt{thermal\_status} from \texttt{PowerManager}. Model initialization (\texttt{model\_load\_ms}, covering interpreter creation, delegate setup, and \texttt{allocateTensors()}) is recorded on iteration~0 of every warm-up phase ($n = 192$ retained runs). Independently, process cold-start latency (\texttt{am start -W TotalTime} and \texttt{WaitTime}) and settled idle memory (\texttt{dumpsys meminfo TOTAL} at 2\,s post-launch, zero models loaded) were captured over $n = 10$ alternating force-stopped launches per APK and archived as \texttt{app\_baseline} JSONLs. APK and \texttt{.tflite} file sizes use SI decimal megabytes ($1\,\text{MB} = 10^6$\,B) and are decomposed by zip entry to separate universal multi-ABI packaging from fair \texttt{arm64-v8a} single-ABI footprints (ADR-0009).
+\begin{table}[t]
+\caption{Evaluated Metrics, Symbols, and Measurement Sources}
+\label{tab:metrics}
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Schema Field} & \textbf{Definition / Measurement Source} \\
+\midrule
+$T_{\mathrm{kernel}}$ & \texttt{inference\_native\_ms} & Runtime native micro/nanosecond kernel timer (ms) \\
+$T_{\mathrm{pre}}, T_{\mathrm{post}}$ & \texttt{preprocess\_ms}, \texttt{postprocess\_ms} & Input decode/tokenize and output argmax/box scan (ms) \\
+$T_{\mathrm{bnd}}$ & \texttt{boundary\_overhead\_ms} & FFI/JNI wrapper tax: $T_{\mathrm{inf}} - T_{\mathrm{kernel}}$ (ms) \\
+$T_{\mathrm{e2e}}$ & \texttt{end\_to\_end\_ms} & Full input-to-result pipeline duration (ms) \\
+$M_{\mathrm{PSS}}$ & \texttt{pss\_mb} & Active process PSS via \texttt{Debug.MemoryInfo} (MiB) \\
+$M_{\mathrm{idle}}$ & \texttt{idle\_pss\_mb} & Settled idle \texttt{dumpsys meminfo TOTAL} at 2\,s ($n=10$) \\
+$U_{\mathrm{CPU}}$ & \texttt{cpu\_pct} & Process CPU via \texttt{/proc/self/stat} (100\% = 1 core) \\
+$T_{\mathrm{load}}$ & \texttt{model\_load\_ms} & Session warmup~0 load + shader + tensor alloc (ms) \\
+$T_{\mathrm{cold}}$ & \texttt{cold\_start\_ms} & Force-stopped \texttt{am start -W TotalTime} (ms, $n=10$) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
 
 \subsection{Execution Protocol, Data Hygiene, and Statistical Analysis}
-Measurements were executed over 8 sessions on \texttt{dev-infinix-x650c} under fixed display wake-lock and background radio lockdown, alternating platform execution order (odd sessions: Flutter first; even sessions: Native first) and shuffling the 18 configurations deterministically via seed $S = 20261109 + \text{session}$ with mandatory 60\,s inter-run cooldowns. All 23,180 kept records remained at \texttt{thermal\_status = none}.
+Eight alternating sessions (odd: Flutter first; even: Native first) shuffled all 18 configurations with seed $S = 20261109 + \text{session}$, separated by mandatory 60\,s cooldowns under locked display wake-lock and radio lockdown. All retained records stayed at nominal thermal status (\texttt{none}). Table~\ref{tab:exclusions} accounts for all $24{,}020$ raw records ($283$ JSONL files) and our versioned exclusions.
 
-From 283 raw JSONL files (24,020 records: 23,980 benchmark + 40 \texttt{app\_baseline}), we audited and excluded via version-controlled \texttt{data/exclusions.yaml} seven Native runs (840 records across Sessions~2--7) where a MediaTek/Android~9 clock-delta glitch emitted a $9223372036854776$\,ms (\texttt{Long.MAX\_VALUE}$/10^6$) sentinel across timestamps. Including four initial Session-1 Native INT8 schema/dtype errors (remediated prior to Session~2), four missing Session-3 Native runs, three missing unsupported Session-1 Flutter runs, and 96 \texttt{unsupported} delegate markers, 23,180 kept records yield 19,200 measured iterations (11,200 Native; 8,000 Flutter), 3,840 warm-up iterations, and 40 baseline records. Following ADR-0007, the unit of inferential analysis is the \textbf{session median}:
-\begin{equation}
-\tilde{X}_{c, s} = \operatorname{median}_{i=1 \dots 100} \{ x_{c, s, i} \}
-\end{equation}
-yielding $n_F = 8$ and $n_N \in \{5, 7, 8\}$ independent replicates across the 10 mutually supported configurations (collapsing duplicate Session-7 Native runs per config into a single session median), plus $n = 10$ independent cold launches per platform. For each comparison, we run two-sided Mann--Whitney~$U$ tests with Holm--Bonferroni correction within each RQ family ($\alpha = 0.05$), Cliff's dominance $\delta$~\cite{cliff1993dominance}, and 10,000-resample bootstrap 95\% confidence intervals on the median ratio $\mathcal{R} = \operatorname{median}(\tilde{X}_F) / \operatorname{median}(\tilde{Y}_N)$. Practical significance requires both $|\delta| \ge 0.33$ and $\text{CI}_{95\%}(\mathcal{R}) \cap [0.95, 1.05] = \emptyset$.
+\begin{table}[t]
+\caption{Raw Data Accounting and Audit Exclusion Flow}
+\label{tab:exclusions}
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lrll}
+\toprule
+\textbf{Cohort / Filter Stage} & \textbf{Records} & \textbf{Scope} & \textbf{Disposition / Reason} \\
+\midrule
+Raw captured records & 24,020 & 283 files & 23,980 benchmark + 40 cold/idle baseline \\
+Excluded clock glitches & $-840$ & 7 Native runs & MT6765 clock-delta sentinel ($9.22{\times}10^{15}$\,ms) \\
+\midrule
+Retained valid dataset & 23,180 & Analysis input & Comprising exact breakdown below: \\
+\quad Measured (\texttt{ok}) & 19,200 & 192 runs & 11,200 Native; 8,000 Flutter \\
+\quad Warm-up (\texttt{ok}) & 3,840 & 192 runs & 2,240 Native; 1,600 Flutter ($T_{\mathrm{load}}$ at iter.~0) \\
+\quad Baseline launches & 40 & 20 trials & 20 \texttt{cold\_start} + 20 \texttt{idle} (10/stack) \\
+\quad Delegate \texttt{unsupported} & 96 & Non-shared & 35 Native; 61 Flutter (NNAPI / MN3-GPU) \\
+\quad Initial dtype errors & 4 & Session~1 & Native INT8 schema errors fixed before S2 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+To prevent pseudo-replication across correlated iterations, inferential tests operate strictly on independent \textbf{session medians} $\tilde{X}_{c,s} = \operatorname{median}_{i=1..100}\{x_{c,s,i}\}$, yielding $n_F = 8$ and $n_N \in \{5, 7, 8\}$ across the 10 mutually supported configurations (collapsing duplicate Session-7 Native runs to one session median), plus $n=10$ launches. We apply two-sided Mann--Whitney~$U$ tests with Holm--Bonferroni correction per RQ family ($\alpha=0.05$), Cliff's dominance~$\delta$~\cite{cliff1993dominance}, and 10,000-resample bootstrap 95\% confidence intervals on the median ratio $\mathcal{R} = \operatorname{median}(\tilde{X}_F)/\operatorname{median}(\tilde{Y}_N)$.
+
+\textbf{Decision Criteria and Power:} Practical divergence requires $|\delta| \ge 0.33$ and $\text{CI}_{95\%}(\mathcal{R}) \cap [0.95, 1.05] = \emptyset$. Conversely, establishing \textit{equivalence} requires passing a non-parametric multiplicative TOST---two one-sided Mann--Whitney tests against $\mathcal{R} \le 0.95$ and $\mathcal{R} \ge 1.05$ with $p_{\mathrm{TOST}} = \max(p_{>0.95}, p_{<1.05}) < 0.05$---alongside $\text{CI}_{95\%}(\mathcal{R}) \subseteq [0.95, 1.05]$. Under $n_F=8, n_N=5$, two-sided Mann--Whitney~$U$ has a discrete floor $p_{\min} = 0.001554$; in large families (e.g., $M=50$ in RQ2), $(8,5)$ tests fail Holm rejection unless ranked ahead of smaller $p$-values (exact threshold $\alpha/32 = 0.00156$). Table~\ref{tab:hypotheses} defines all evaluated hypotheses.
+
+\begin{table}[t]
+\caption{Formal Statistical Hypotheses Mapped to RQ Metrics}
+\label{tab:hypotheses}
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lll}
+\toprule
+\textbf{ID} & \textbf{Alternative Hypothesis ($H_1$)} & \textbf{Primary Metric(s)} \\
+\midrule
+H1 & Pure kernel latency differs between stacks & $T_{\mathrm{kernel}}$ \\
+H2 & End-to-end latency differs via non-kernel stages & $T_{\mathrm{e2e}}$, $T_{\mathrm{pre}}$, $T_{\mathrm{bnd}}$, $T_{\mathrm{post}}$ \\
+H3a & Flutter exhibits higher idle and active PSS RAM & $M_{\mathrm{PSS}}$, $M_{\mathrm{idle}}$ \\
+H4 & Performance gap varies by model, precision, delegate & Ratio $\mathcal{R}$ across $(M, Q, D)$ \\
+H5 & Flutter incurs longer startup and larger APK size & $T_{\mathrm{cold}}$, $T_{\mathrm{load}}$, ABI MB \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

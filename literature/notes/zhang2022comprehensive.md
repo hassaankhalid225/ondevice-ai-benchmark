@@ -1,22 +1,22 @@
 # zhang2022comprehensive: A Comprehensive Benchmark of Deep Learning Libraries on Mobile Devices
 
 - **Citation key:** `zhang2022comprehensive` (in `literature/references.bib`, verified ✔)
-- **Link / DOI:** https://doi.org/10.1145/3485447.3512282
-- **Read on:** 2026-11-09 · **Relevance:** ★★★
+- **Link / DOI:** https://doi.org/10.1145/3485447.3512148 (arXiv:2202.06512, WWW 2022, pp. 3298--3307)
+- **Read on:** 2026-11-09 · Re-verified: 2026-11-11 · **Relevance:** ★★★
 
 ## One-sentence summary
-Evaluated six representative mobile deep learning libraries across 10 mobile devices and 15 models, demonstrating that framework choice and software fragmentation can introduce performance gaps larger than hardware or model optimizations.
+Evaluated six representative mobile deep learning libraries across 10 mobile devices and 15 models, demonstrating that runtime selection and operator support introduce up to an order-of-magnitude latency variation on CPU and GPU.
 
 ## Method
-- **Libraries:** TensorFlow Lite (TFLite), NCNN, MNN, PyTorch Mobile, MACE, SNPE.
-- **Hardware backends:** CPU, GPU (OpenCL/Vulkan), NPU/DSP across 10 modern smartphones (Qualcomm, MediaTek, HiSilicon).
-- **Workloads:** 15 diversified vision and NLP models (MobileNet series, SqueezeNet, BERT-tiny, etc.).
-- **Metrics:** Inference latency, model loading time, memory consumption, energy, hardware acceleration efficiency.
+- **Libraries:** TensorFlow Lite (TFLite), NCNN, MNN, PyTorch Mobile, Mace, FeatherCNN (6 inference engines).
+- **Hardware backends:** CPU and GPU across 10 smartphones.
+- **Workloads:** 15 vision and language models.
+- **Metrics:** Inference latency, cold initialization overhead, thread scaling, and INT8 quantization speedups.
 
-## Key results (with numbers + page/figure reference)
-- Across libraries running the identical model on the identical hardware, latency differed by up to 4.8× on CPU and over 10× on GPU (Figure 4, p. 3301).
-- Hardware delegates (GPU/NPU) often failed to yield speedups for small models due to dispatch and buffer marshalling overheads.
-- Runtime memory overhead and initialization costs varied substantially across libraries, with TFLite exhibiting stable and consistent behavior across vendors.
+## Key results (verified against arXiv:2202.06512 PDF)
+- Across libraries on identical models and hardware, fastest vs. slowest engine latency averaged 7.4× overall (1.9× over 2nd-best), averaging **8.7× on CPU** and **6.0× on GPU**, and reaching up to **54.3×** in worst-case CNN execution.
+- Quantization (INT8 vs. FP32) delivered only modest and inconsistent speedups (**0.8×–3.0×**), sometimes regressing depending on operator fallback.
+- Operator coverage, thread scaling, and delegate initialization overheads varied sharply across native C++ engines.
 
 ## Relevance to our study
 - Directly grounds **ADR-0002** (pinning LiteRT as the common baseline engine to eliminate inter-library variability).

@@ -3,6 +3,18 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-11: Paper 1 Revision Checklist Complete (10-Page IEEE PDF, TOST Equivalence, 31 Verified Refs)
+
+### Paper & Literature
+- Executed full **Paper Revision Checklist** across `paper/main.tex`, `paper/sections/00-07.tex`, and `paper/one-pager.md`:
+  - **Priority 0:** Removed internal `"CLAUDE integrity rules"`, all `ADR-*`, `EXP-001`, `dev-infinix-x650c`, `\todo`, and `"pre-registered"` tokens (`0` hits across `.tex`); fixed MobileBERT-QA FP32 GPU phrasing (`82% of the +4.90 ms end-to-end gap`), fixed `"audibly excluded"` $\to$ `"auditably excluded"`, and fixed bimodal Native MobileNetV3 CPU numbers per precision from raw session data (`92.4–129.7 ms` vs. `232.4–358.0 ms` FP32; `71.0–77.8 ms` vs. `341.7–346.5 ms` INT8).
+  - **Priority 1:** Scoped Title, Abstract, RQs (`RQ3`/`RQ4` aligned to delivered metrics), and Conclusions to single entry-tier Option B hardware (`Infinix Hot 8, Helio P22, Android 9`) with repo-versioned protocol commit `dc45f62`; formally defined Hypotheses Table (`H1`, `H2`, `H3a`, `H4`, `H5`); added non-parametric multiplicative TOST (`3/4` GPU configs strictly equivalent $p_{\mathrm{TOST}} \le 0.041$; `EfficientDet-Lite0 INT8 GPU` inconclusive at $p_{\mathrm{TOST}} = 0.177, n_N=5$) and exact MWU $(8,5)$ power floor ($p_{\min}=0.001554$).
+  - **Priority 2:** Trimmed Abstract to `185` words; cited Stack Overflow 2024 survey + Flutter Impeller docs; unified 4 Research Gap blocks into 1 Combined Research Gap; defined symbolic metrics + mapping table, 8-char SHA-256 model table, exclusion flow table, and promoted `Runtime Packaging Differences`; converted Fig. 2 to horizontal grayscale-hatched bars and dropped redundant single-device table columns; added maintainer implications, concrete decision thresholds, and single-author bias threat; compressed paper cleanly from `13` to **`10` IEEEtran pages** including references.
+  - **Priority 3:** Audited every bibliography entry against CrossRef DOIs and original PDFs (`arXiv:2109.13963`, `arXiv:2202.06512`, `arXiv:1812.05448`); repaired DOIs/venues/pages (`willocx2016comparing` $\to$ MOBILESoft 2016, `delia2015multi` $\to$ RCIS 2015, `biornhansen2019survey` $\to$ `10.1145/3241739`, `banbury2020benchmarking`, `almeida2021smart`, `zhang2022comprehensive`) and reading notes; added verified 2023–2025 references (`horn2023native`, `nanavati2024critical`, `murthy2024mobileaibench`, `wang2025lmmeter`, `stackoverflow2024survey`, `flutterimpeller2025`; `31/31` cited).
+
+### Changed
+- `analysis/benchkit/`: added non-parametric `tost_p()` (`stats.py`) and `equivalent` column (`compare.py`); updated `figures.py` to render horizontal grayscale-hatched `rq2-stage-decomposition.pdf` with readable legend labels, mark TOST vs. inconclusive vs. practical points on ratio forest plots, and omit constant single-device columns in LaTeX tables; updated `test_pipeline.py` (`23/23` tests pass, `ruff check` clean).
+
 ## 2026-11-11: Repository Release Metadata & EXP-002 Transition (`v0.1.0-exp001`)
 
 ### Fixed

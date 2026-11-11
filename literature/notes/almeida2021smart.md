@@ -1,20 +1,20 @@
 # almeida2021smart: Smart at What Cost? Characterising Mobile Deep Neural Networks in the Wild
 
 - **Citation key:** `almeida2021smart` (in `literature/references.bib`, verified ✔)
-- **Link / DOI:** https://doi.org/10.1145/3487552.3487823
-- **Read on:** 2026-11-09 · **Relevance:** ★★★
+- **Link / DOI:** https://doi.org/10.1145/3487552.3487863 (arXiv:2109.13963, IMC 2021, pp. 658--672)
+- **Read on:** 2026-11-09 · Re-verified: 2026-11-11 · **Relevance:** ★★★
 
 ## One-sentence summary
-Characterized the runtime performance, energy, and resource costs of deploying deep neural networks in consumer smartphone applications, demonstrating substantial variance caused by thermal throttling and background execution.
+Characterized the runtime performance and battery behavior of mobile deep neural networks across device tiers in the wild, demonstrating wide device-tier dispersion, non-linear FLOP-to-latency scaling under thermal throttling and scheduler policies, and multi-thread contention slowdowns.
 
 ## Method
-- **Methodology:** In-the-wild profiling and controlled testbeds of mobile neural network executions across diverse mobile device tiers (budget to flagship).
-- **Metrics:** Latency, energy drain (via hardware power monitors and battery fuel gauges), CPU/GPU residency, and thermal dissipation over extended multi-minute runs.
+- **Methodology:** Large-scale device-tier measurements spanning low-end (Samsung Galaxy A20), mid-tier (Galaxy A70), and flagship (Galaxy S21) Android smartphones running diverse DNN workloads across CPU, GPU, and NPU backends.
+- **Metrics:** Inference latency, FPS/battery drain under sustained runs, thermal throttling effects, and CPU core affinity/thread scaling.
 
-## Key results
-- Continuous on-device inference triggers rapid thermal throttling on mid-tier and budget smartphones, causing latency to degrade by 25%–60% within 2 to 5 minutes of continuous execution.
-- Battery drain per inference is strongly dependent on whether hardware acceleration stays active or drops back to CPU due to driver or thermal limits.
-- Background process interference and unconstrained OS scheduling introduce high tail latency (p95/p99) that invalidates simple mean-based reporting.
+## Key results (verified against arXiv:2109.13963 PDF)
+- **Device-tier disparity:** Across models, low-end A20 and mid-tier A70 handsets executed at an average 3.4× and 1.51× slower than the flagship S21, respectively.
+- **Thermal throttling & scheduler effects:** Latency does not scale linearly with model FLOPs on mobile SoCs due to hardware/driver optimizations, scheduler policies, and thermal throttling during sustained runs.
+- **Thread contention:** Adding CPU threads without core affinity or matching big.LITTLE topologies can degrade rather than improve mobile CPU inference throughput.
 
 ## Relevance to our study
 - Directly informs the rigorous thermal protocol in `benchmark-spec/protocol.yaml`:

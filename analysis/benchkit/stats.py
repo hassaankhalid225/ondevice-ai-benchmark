@@ -56,6 +56,18 @@ def bootstrap_median_ratio_ci(x: np.ndarray, y: np.ndarray, *, resamples: int = 
     return ratio, float(lo), float(hi)
 
 
+def tost_p(x: np.ndarray, y: np.ndarray, *, bounds: tuple[float, float] = (0.95, 1.05)) -> float:
+    """Non-parametric multiplicative TOST p-value using two one-sided Mann-Whitney U tests
+    against ratio bounds [lo, hi]: tests H01: X <= lo*Y vs X > lo*Y and H02: X >= hi*Y vs X < hi*Y."""
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if x.size == 0 or y.size == 0:
+        return float("nan")
+    p_lo = float(mannwhitneyu(x, bounds[0] * y, alternative="greater").pvalue)
+    p_hi = float(mannwhitneyu(x, bounds[1] * y, alternative="less").pvalue)
+    return float(max(p_lo, p_hi))
+
+
 def holm(pvalues: np.ndarray) -> np.ndarray:
     """Holm-Bonferroni step-down adjusted p-values (monotone, capped at 1). NaNs pass through."""
     p = np.asarray(pvalues, dtype=float)
@@ -83,6 +95,7 @@ class Comparison:
     median_y: float
     u: float
     p: float
+    tost_p: float
     delta: float
     magnitude: str
     ratio: float
@@ -90,14 +103,16 @@ class Comparison:
     ratio_hi: float
 
 
-def compare_samples(x: np.ndarray, y: np.ndarray, *, resamples: int = 10_000, seed: int = 42) -> Comparison:
+def compare_samples(x: np.ndarray, y: np.ndarray, *, resamples: int = 10_000, seed: int = 42,
+                    equivalence_band: tuple[float, float] = (0.95, 1.05)) -> Comparison:
     """Full two-sample comparison: x = Flutter, y = native by convention."""
     x = np.asarray(x, dtype=float)
     x = x[~np.isnan(x)]
     y = np.asarray(y, dtype=float)
     y = y[~np.isnan(y)]
     res = mannwhitneyu(x, y, alternative="two-sided")
+    eq_p = tost_p(x, y, bounds=equivalence_band)
     d = cliffs_delta(x, y)
     r, lo, hi = bootstrap_median_ratio_ci(x, y, resamples=resamples, seed=seed)
     return Comparison(int(x.size), int(y.size), float(np.median(x)), float(np.median(y)),
-                      float(res.statistic), float(res.pvalue), d, cliffs_magnitude(d), r, lo, hi)
+                      float(res.statistic), float(res.pvalue), eq_p, d, cliffs_magnitude(d), r, lo, hi)

@@ -3,10 +3,10 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-11 · **Current phase:** Phase 3, 5 & 6 Complete (`v0.1.0-exp001` Release Snapshot) · **Protocol:** v0.3.0
+**Last updated:** 2026-11-11 · **Current phase:** Paper 1 Revised (10p IEEE, Zero Leaks, 31 Verified Refs) & Ready for `exp-002` · **Protocol:** v0.3.0
 
 ## Current focus
-Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on entry-tier device `dev-infinix-x650c`), full statistical analysis (`benchkit`), and full paper drafting & empirical revision across `paper/sections/*.tex` are **complete** with zero `\todo{}` markers.
+Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on `dev-infinix-x650c`), full statistical analysis (`benchkit` with multiplicative non-parametric TOST), and complete **Paper Revision Checklist** across `paper/main.tex`, `paper/sections/*.tex`, and `literature/references.bib` are **complete** and compiled cleanly to an exact **10-page IEEE conference PDF** (`paper/main.pdf`).
 
 - **Device Evaluated:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, PowerVR GE8320, 3.7 GB RAM, Android 9 / API 28; runtime JSONL slug `dev-infinix-mobility-limited-infinix-x650c`).
 - **Completed Dataset & Validation (`data/raw/dev-infinix-x650c/`):**
@@ -19,14 +19,14 @@ Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/i
 - **Analysis & Paper Generation (`analysis/benchkit` + `paper/`):**
   - `data/processed/summary.csv`: **220 rows**; `data/processed/comparisons.csv`: **92 cross-platform comparisons** across RQ1, RQ2, RQ3, and RQ5 families (`n_F = 8`, `n_N \in \{5, 7, 8\}`, `n = 10` baseline launches).
   - Generated **6 vector PDFs** (`paper/figures/`) and **6 LaTeX tables** (`paper/tables/`), visually inspected for layout clarity.
-  - Revised all paper sections (`00-abstract.tex` through `07-conclusion.tex`), compiled the **13-page IEEEtran PDF (`paper/main.pdf`)** locally via portable Tectonic (`XeTeX`) with cross-engine `iftex`/`TeX Gyre` font support, eliminated all `\todo{}`, resolved Equation~(2) overflow, fixed math-mode `\times`/comma spacing and Table~X wrapping, visually verified all 13 rendered pages, and passed automated LaTeX linting/cross-ref/bib verification (`25/25` citations resolved) + `ruff check` + `23/23` `pytest`.
+  - Revised all paper sections (`00-abstract.tex` through `07-conclusion.tex`) per the Nov 11 Paper Revision Checklist: scoped Title/Option-B hardware framing, `<200`-word Abstract (`185` PDF words), protocol commit `dc45f62` wording, verified CrossRef/arXiv literature + 2023–2025 references (`31/31` cited), single Combined Research Gap, promoted `Runtime Packaging Differences`, math symbol mapping & Hypotheses table (`H1`–`H5`, `H3b` omitted), `8`-char SHA-256 table, exclusion audit flow table, horizontal hatched Fig. 2, non-parametric TOST (`3/4` GPU equivalence) & MWU `n=(8,5)` power analysis, `82%` MobileBERT FFI fix, exact per-precision bimodal Native CPU clusters, maintainer implications, thresholded practitioner matrix, and single-author bias threat; compiled exact **10-page IEEEtran PDF (`paper/main.pdf`)** with `0` leak tokens (`CLAUDE`/`ADR-`/`EXP-001`/`dev-infinix`/`TODO`), `0` Overfull boxes, clean visual PNG proof inspection, `ruff check` clean, and `23/23` `pytest` passing.
 
 ## Next actions (in order)
 1. [x] Execute complete $N=8$ alternating campaign on `dev-infinix-x650c` + $n=10$ baseline cold-start/idle trials.
 2. [x] Validate raw JSONLs (`283/283`), finalize exclusions (`840` sentinel records), and run `benchkit` pipeline (`summary.csv`, `comparisons.csv`, 6 figures, 6 tables).
 3. [x] Audit APKs/dependencies and record ADR-0009; refine `benchkit` tests (`23/23` pass, `ruff` clean).
 4. [x] Revise all paper sections (`paper/sections/*.tex`), `experiments/EXP-001.md`, `docs/`, and `CHANGELOG.md` to final verified EXP-001 numbers (`0` `\todo{}`).
-5. [x] Compile `paper/main.tex` to PDF (`paper/main.pdf`, 13 pages) and visually verify all rendered proof pages (0 errors, 0 Overfull boxes, 25/25 refs resolved; Overleaf `pdflatex` path also remains supported).
+5. [x] Compile `paper/main.tex` to PDF (`paper/main.pdf`, 10 pages) and visually verify all rendered proof pages (0 errors, 0 Overfull boxes, 31/31 refs resolved, 0 leak hits; Overleaf `pdflatex` path also remains supported).
 6. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 arXiv/conference submission.
 7. [ ] Begin `EXP-002` planning and hardware onboarding: connect **Infinix Smart 7** via ADB (`adb shell getprop` + `/proc/meminfo`) to verify SoC/API level and `BATTERY_PROPERTY_CHARGE_COUNTER` support before registering `docs/04-device-matrix.md`, implement unplugged `energy` and 5-minute `sustained` FPS runner loops plus matched-LiteRT control (`ADR-0010`), and add mid-range / flagship Android devices as available.
 

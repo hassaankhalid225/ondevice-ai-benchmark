@@ -39,6 +39,7 @@ def test_end_to_end_pipeline_recovers_constructed_effects(synthetic_raw, tmp_pat
     assert comp.loc["inference_native_ms", "family"] == "RQ1"
     assert not comp.loc["inference_native_ms", "practical"]
     assert not comp.loc["inference_ms", "practical"]
+    assert "tost_p" in comp.columns and "equivalent" in comp.columns
     assert 1.7 < comp.loc["boundary_overhead_ms", "ratio"] < 2.3
     assert comp.loc["preprocess_ms", "practical"]
     assert 1.8 < comp.loc["preprocess_ms", "ratio"] < 2.2

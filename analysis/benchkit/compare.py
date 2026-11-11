@@ -36,7 +36,7 @@ def compare_all(df: pd.DataFrame, *, metrics: list[str] | None = None, alpha: fl
             y = unit.loc[unit["platform"] == native, metric].to_numpy(dtype=float)
             if x.size < 2 or y.size < 2:
                 continue
-            c = compare_samples(x, y, resamples=resamples, seed=seed)
+            c = compare_samples(x, y, resamples=resamples, seed=seed, equivalence_band=ratio_band)
             iter_ratio = float(g.loc[g["platform"] == FLUTTER, metric].median()
                                / g.loc[g["platform"] == native, metric].median())
             rows.append(cfg | {"metric": metric, "family": METRIC_FAMILIES[metric],
@@ -51,4 +51,7 @@ def compare_all(df: pd.DataFrame, *, metrics: list[str] | None = None, alpha: fl
     out["significant"] = out["p_holm"] < alpha
     out["practical"] = ((out["delta"].abs() >= min_abs_delta)
                         & ((out["ratio_lo"] > ratio_band[1]) | (out["ratio_hi"] < ratio_band[0])))
+    out["equivalent"] = ((out["tost_p"] < alpha)
+                         & (out["ratio_lo"] >= ratio_band[0])
+                         & (out["ratio_hi"] <= ratio_band[1]))
     return out

@@ -4,7 +4,7 @@
 > app size, to run on-device deep learning through **Flutter** instead of **native** Android/iOS
 > code, when the model, runtime and inputs are held identical?
 
-**Status:** Release `v0.1.0-exp001` — Campaign EXP-001 ($N=8$ sessions on `dev-infinix-x650c`, 283 JSONL files / 23,180 kept records), reproducible `benchkit` statistical pipeline, and compiled 13-page IEEE paper (`0` `\todo` markers) are complete. Next: author review and follow-on multi-device / unplugged energy / sustained FPS expansion (`EXP-002+`). See [`docs/PROGRESS.md`](docs/PROGRESS.md) and [`experiments/EXP-001.md`](experiments/EXP-001.md).
+**Status:** Release `v0.1.0-exp001` + Paper Revision 1 — Campaign EXP-001 ($N=8$ sessions on `dev-infinix-x650c`, 283 JSONL files / 23,180 kept records), reproducible `benchkit` statistical pipeline (including non-parametric TOST equivalence & single-device table formatting), and compiled **10-page IEEE paper** (`paper/main.pdf`, 31 CrossRef/PDF-verified references, zero `\todo` markers) are complete. Next: `exp-002` controlled CPU matched-LiteRT (`1t`/`4t`), `fromFile()`/`mmap`, and second-device (`Infinix Smart 7`) runs. See [`docs/PROGRESS.md`](docs/PROGRESS.md) and [`experiments/EXP-001.md`](experiments/EXP-001.md).
 
 ## Why this matters
 

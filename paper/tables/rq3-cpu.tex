@@ -1,16 +1,16 @@
-\begin{tabular}{llllrrrrl}
+\begin{tabular}{lllrrrrl}
 \toprule
-Device & Model & Prec. & Deleg. & Flutter & Native & Ratio [95\% CI] & $\delta$ & $p_{\mathrm{Holm}}$ \\
+Model & Prec. & Deleg. & Flutter & Native & Ratio [95\% CI] & $\delta$ & $p_{\mathrm{Holm}}$ \\
 \midrule
-infinix-x650c & efficientdet\_lite0 & fp32 & cpu & 64.39 & 63.56 & 1.01 [0.99, 1.05] & +0.38 & 0.366 \\
-infinix-x650c & efficientdet\_lite0 & fp32 & gpu & 34.95 & 13.31 & 2.63 [2.47, 2.78] & +1.00 & 0.003 \\
-infinix-x650c & efficientdet\_lite0 & int8 & cpu & 62.14 & 53.25 & 1.17 [1.09, 1.28] & +0.75 & 0.053 \\
-infinix-x650c & efficientdet\_lite0 & int8 & gpu & 31.61 & 12.42 & 2.55 [2.38, 2.92] & +1.00 & 0.012 \\
-infinix-x650c & mobilebert\_qa & fp32 & cpu & 50.76 & 67.48 & 0.75 [0.69, 0.87] & -1.00 & 0.004 \\
-infinix-x650c & mobilebert\_qa & fp32 & gpu & 4.57 & 3.58 & 1.27 [1.18, 1.43] & +1.00 & 0.003 \\
-infinix-x650c & mobilebert\_qa & int8 & cpu & 47.71 & 52.02 & 0.92 [0.86, 1.03] & -0.43 & 0.366 \\
-infinix-x650c & mobilebert\_qa & int8 & gpu & 4.69 & 3.35 & 1.40 [1.23, 1.61] & +1.00 & 0.003 \\
-infinix-x650c & mobilenetv3\_large & fp32 & cpu & 67.97 & 184.69 & 0.37 [0.35, 0.52] & -1.00 & 0.012 \\
-infinix-x650c & mobilenetv3\_large & int8 & cpu & 59.14 & 153.29 & 0.39 [0.36, 0.48] & -1.00 & 0.004 \\
+efficientdet\_lite0 & fp32 & cpu & 64.39 & 63.56 & 1.01 [0.99, 1.05] & +0.38 & 0.366 \\
+efficientdet\_lite0 & fp32 & gpu & 34.95 & 13.31 & 2.63 [2.47, 2.78] & +1.00 & 0.003 \\
+efficientdet\_lite0 & int8 & cpu & 62.14 & 53.25 & 1.17 [1.09, 1.28] & +0.75 & 0.053 \\
+efficientdet\_lite0 & int8 & gpu & 31.61 & 12.42 & 2.55 [2.38, 2.92] & +1.00 & 0.012 \\
+mobilebert\_qa & fp32 & cpu & 50.76 & 67.48 & 0.75 [0.69, 0.87] & -1.00 & 0.004 \\
+mobilebert\_qa & fp32 & gpu & 4.57 & 3.58 & 1.27 [1.18, 1.43] & +1.00 & 0.003 \\
+mobilebert\_qa & int8 & cpu & 47.71 & 52.02 & 0.92 [0.86, 1.03] & -0.43 & 0.366 \\
+mobilebert\_qa & int8 & gpu & 4.69 & 3.35 & 1.40 [1.23, 1.61] & +1.00 & 0.003 \\
+mobilenetv3\_large & fp32 & cpu & 67.97 & 184.69 & 0.37 [0.35, 0.52] & -1.00 & 0.012 \\
+mobilenetv3\_large & int8 & cpu & 59.14 & 153.29 & 0.39 [0.36, 0.48] & -1.00 & 0.004 \\
 \bottomrule
 \end{tabular}
