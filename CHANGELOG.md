@@ -3,6 +3,12 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-11: Zenodo Archival DOI (`10.5281/zenodo.24128933`) & ORCID Citation Metadata
+
+### Added
+- `README.md` and `CITATION.cff`: Added verified Zenodo DOI badge and identifier (`10.5281/zenodo.24128933`), author ORCID badge/identifier (`https://orcid.org/0009-0002-4289-2011`), `version: 0.2.0`, `v0.2.0-paper1` release link, and BibTeX citation block.
+- `docs/PROGRESS.md`: Recorded `v0.2.0-paper1` release, Zenodo DOI, and ORCID archival status.
+
 ## 2026-11-11: Paper 1 Revision Checklist Complete (10-Page IEEE PDF, TOST Equivalence, 31 Verified Refs)
 
 ### Paper & Literature

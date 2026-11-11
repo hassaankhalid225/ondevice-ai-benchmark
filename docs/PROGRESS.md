@@ -3,10 +3,10 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-11 · **Current phase:** Paper 1 Revised (10p IEEE, Zero Leaks, 31 Verified Refs) & Ready for `exp-002` · **Protocol:** v0.3.0
+**Last updated:** 2026-11-11 · **Current phase:** Paper 1 Revised (10p IEEE, Zenodo DOI `10.5281/zenodo.24128933`, Ready for `exp-002`) · **Protocol:** v0.3.0
 
 ## Current focus
-Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on `dev-infinix-x650c`), full statistical analysis (`benchkit` with multiplicative non-parametric TOST), and complete **Paper Revision Checklist** across `paper/main.tex`, `paper/sections/*.tex`, and `literature/references.bib` are **complete** and compiled cleanly to an exact **10-page IEEE conference PDF** (`paper/main.pdf`).
+Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on `dev-infinix-x650c`), full statistical analysis (`benchkit` with multiplicative non-parametric TOST), complete **Paper Revision Checklist** across `paper/main.tex`, `paper/sections/*.tex`, and `literature/references.bib`, GitHub release **`v0.2.0-paper1`**, Zenodo archival DOI (**[`10.5281/zenodo.24128933`](https://doi.org/10.5281/zenodo.24128933)**), and ORCID linkage (**[`0009-0002-4289-2011`](https://orcid.org/0009-0002-4289-2011)**) are **complete**, with an exact **10-page IEEE conference PDF** (`paper/main.pdf`).
 
 - **Device Evaluated:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, PowerVR GE8320, 3.7 GB RAM, Android 9 / API 28; runtime JSONL slug `dev-infinix-mobility-limited-infinix-x650c`).
 - **Completed Dataset & Validation (`data/raw/dev-infinix-x650c/`):**
