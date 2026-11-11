@@ -5,7 +5,9 @@ authors:
   - family-names: Khalid
     given-names: Hassaan
     affiliation: "Department of Software Engineering, University of Sargodha"
-version: 0.1.0
+    orcid: "https://orcid.org/0009-0002-4289-2011"
+version: 0.2.0
+doi: "10.5281/zenodo.24128933"
 date-released: 2026-11-11
 license: MIT
 repository-code: "https://github.com/hassaankhalid225/ondevice-ai-benchmark"
