@@ -16,16 +16,16 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import RAW_DIR
+from . import RAW_DIR, REPO_ROOT
 from .validate import load_validator, validate_file
 
 NATIVE_PKG = "pk.edu.uos.bench.nativeandroid"
 NATIVE_ACT = "pk.edu.uos.bench.nativeandroid/.ui.MainActivity"
-NATIVE_APK = Path("apps/android_native_bench/app/build/outputs/apk/release/app-release.apk")
+NATIVE_APK = REPO_ROOT / "apps" / "android_native_bench" / "app" / "build" / "outputs" / "apk" / "release" / "app-release.apk"
 
 FLUTTER_PKG = "pk.edu.uos.bench.flutter_bench"
 FLUTTER_ACT = "pk.edu.uos.bench.flutter_bench/.MainActivity"
-FLUTTER_APK = Path("apps/flutter_bench/build/app/outputs/flutter-apk/app-release.apk")
+FLUTTER_APK = REPO_ROOT / "apps" / "flutter_bench" / "build" / "app" / "outputs" / "flutter-apk" / "app-release.apk"
 
 
 def find_adb() -> str:
