@@ -3,10 +3,15 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-11 · **Current phase:** Paper 1 Revised (10p IEEE, Zenodo DOI `10.5281/zenodo.24128933`, Ready for `exp-002`) · **Protocol:** v0.3.0
+**Last updated:** 2026-11-21 · **Current phase:** Phase 4 Multi-Device & Paper Revision (Infinix Hot 8 + Infinix Smart 7) · **Protocol:** v0.3.0
 
 ## Current focus
-Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/idle trials on `dev-infinix-x650c`), full statistical analysis (`benchkit` with multiplicative non-parametric TOST), complete **Paper Revision Checklist** across `paper/main.tex`, `paper/sections/*.tex`, and `literature/references.bib`, GitHub release **`v0.2.0-paper1`**, Zenodo archival DOI (**[`10.5281/zenodo.24128933`](https://doi.org/10.5281/zenodo.24128933)**), and ORCID linkage (**[`0009-0002-4289-2011`](https://orcid.org/0009-0002-4289-2011)**) are **complete**, with an exact **10-page IEEE conference PDF** (`paper/main.pdf`).
+Multi-device benchmark integration across physical **Infinix Hot 8** (`dev-infinix-x650c`, Helio P22, Android 9) and **Infinix Smart 7** (`dev-infinix-x6515`, Helio A22, Android 12). Full statistical analysis, dual-device comparison tables/figures, and updating paper to a multi-device empirical study.
+
+- **Completed Multi-Device Datasets (571 raw files, 47,156 records, 100% PASS `benchkit validate`):**
+  - **Device 1 (Infinix Hot 8 / `dev-infinix-x650c`):** 283 raw JSONL files (`24,020` records, `23,180` retained after clock overflow exclusions).
+  - **Device 2 (Infinix Smart 7 / `dev-infinix-x6515`):** 288 raw JSONL files (`23,136` records, 0 exclusions) across Sessions 1–8 under arm `smart7_full`.
+  - **Zenodo Archival:** Base dataset archived at `10.5281/zenodo.24128933` (v0.2.0-paper1); preparing v0.3.0-multidevice release.
 
 - **Device Evaluated:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, PowerVR GE8320, 3.7 GB RAM, Android 9 / API 28; runtime JSONL slug `dev-infinix-mobility-limited-infinix-x650c`).
 - **Completed Dataset & Validation (`data/raw/dev-infinix-x650c/`):**
@@ -27,8 +32,8 @@ Campaign **EXP-001** ($N=8$ alternating sessions + $n=10$ baseline cold-launch/i
 3. [x] Audit APKs/dependencies and record ADR-0009; refine `benchkit` tests (`23/23` pass, `ruff` clean).
 4. [x] Revise all paper sections (`paper/sections/*.tex`), `experiments/EXP-001.md`, `docs/`, and `CHANGELOG.md` to final verified EXP-001 numbers (`0` `\todo{}`).
 5. [x] Compile `paper/main.tex` to PDF (`paper/main.pdf`, 10 pages) and visually verify all rendered proof pages (0 errors, 0 Overfull boxes, 31/31 refs resolved, 0 leak hits; Overleaf `pdflatex` path also remains supported).
-6. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 arXiv/conference submission.
-7. [ ] Begin `EXP-002` planning and hardware onboarding: connect **Infinix Smart 7** via ADB (`adb shell getprop` + `/proc/meminfo`) to verify SoC/API level and `BATTERY_PROPERTY_CHARGE_COUNTER` support before registering `docs/04-device-matrix.md`, implement unplugged `energy` and 5-minute `sustained` FPS runner loops plus matched-LiteRT control (`ADR-0010`), and add mid-range / flagship Android devices as available.
+6. [ ] Execute `EXP-002` hardware runs on **Infinix Hot 8** (`dev-infinix-x650c`) and **Infinix Smart 7** per `experiments/EXP-002.md` (`matched_1t`, `matched_4t`, `mmap_4t`, and Smart 7 full suite), validate raw JSONLs, and analyze controlled runtime vs ecosystem effects (`benchkit summarize/compare`).
+7. [ ] Perform final author read-through of `paper/main.pdf`, confirm university department supervisor/template rules, and verify arXiv `cs.SE` / `cs.LG` endorsement status before Phase 7 arXiv/conference submission (or fold `EXP-002` results into revised manuscript if running full multi-device update).
 
 ## Phase checklist
 - [x] Phase 0 · Setup (2026-11-09)

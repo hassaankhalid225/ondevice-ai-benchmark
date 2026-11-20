@@ -61,10 +61,10 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // LiteRT / TensorFlow Lite (pinned per ADR-0008)
-    implementation("org.tensorflow:tensorflow-lite:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-gpu-api:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-api:2.16.1")
+    // LiteRT 1.4.0 (C runtime 2.20.0 — matched to Flutter tflite_flutter 0.12.1 for EXP-002)
+    implementation("com.google.ai.edge.litert:litert:1.4.0")
+    implementation("com.google.ai.edge.litert:litert-gpu:1.4.0")
+    implementation("com.google.ai.edge.litert:litert-gpu-api:1.4.0")
+    implementation("com.google.ai.edge.litert:litert-api:1.4.0")
 }
 

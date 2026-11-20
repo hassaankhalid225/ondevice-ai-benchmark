@@ -24,6 +24,7 @@ class BenchmarkConfig {
   final String modelId;
   final String precision; // 'fp32' | 'int8'
   final String delegate;  // 'cpu' | 'gpu' | 'nnapi'
+  final String loader;    // 'asset' (fromBuffer calloc) | 'file' (fromFile mmap)
   final int threads;
   final int warmupIterations;
   final int measureIterations;
@@ -35,6 +36,7 @@ class BenchmarkConfig {
     required this.modelId,
     required this.precision,
     required this.delegate,
+    this.loader = 'asset',
     this.threads = 4,
     this.warmupIterations = 20,
     this.measureIterations = 100,

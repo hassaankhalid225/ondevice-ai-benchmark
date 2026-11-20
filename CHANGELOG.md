@@ -3,6 +3,31 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-21: EXP-002 Infinix Smart 7 Campaign Complete ($N=8$, 288 Raw JSONLs Valid)
+
+### Data
+- Completed all 8 sessions ($N=8$) of the full multi-device benchmark campaign on physical **Infinix Smart 7** (`dev-infinix-x6515`, MediaTek Helio A22, PowerVR GE8320, Android 12) under arm `smart7_full` (`threads=4`).
+- Collected and pulled **288 raw JSONL files** (144 Android Native + 144 Flutter) to `data/raw/exp002/smart7_full/dev-infinix-x6515/` (**100% PASS `benchkit validate`**, Schema v1.1).
+- Generated `data/processed/exp002_smart7_summary.csv` summarizing **23,136 benchmark records** (216 metric summary rows, 0 exclusions).
+- Generated `data/processed/exp002_smart7_comparisons.csv` computing **90 cross-platform comparisons** (Mann-Whitney U, Hodges-Lehmann median difference, and TOST equivalence testing).
+
+### Fixed
+- Fixed Windows cross-drive Gradle build failure by setting `kotlin.incremental=false` in `apps/flutter_bench/android/gradle.properties`.
+- Pinned Gradle distribution to `gradle-8.7-all.zip` in `apps/flutter_bench/android/gradle/wrapper/gradle-wrapper.properties`.
+- Resolved `tflite_flutter 0.12.1` SEGV crash by invoking default `XNNPackDelegate()` (`nullptr` C options) in `apps/flutter_bench/lib/src/harness/benchmark_runner.dart`, preventing Dart-C ABI struct size mismatch against LiteRT 2.20 C runtime.
+- Added autonomous watchdog runner `analysis/auto_run_smart7.py` with dynamic wireless ADB TLS reconnect and battery threshold protection.
+
+## 2026-11-11: EXP-002 Controlled Runtime/Threading & `fromFile` Harness Branch (`exp-002`)
+
+### Decisions
+- ADR-0010 (accepted): Isolated matched-LiteRT (`litert:1.4.0` / `2.20.0`), explicit XNNPACK threading (`1t` vs `4t`), Flutter `Interpreter.fromFile()` (`mmap`) control, and per-arm raw directory routing (`data/raw/exp002/<arm>/`) on branch `exp-002` so `main` (`v0.2.0-paper1`) stays strictly aligned to Paper 1 / `EXP-001`.
+
+### Added
+- `experiments/EXP-002.md`: Hardware runbook for matched `1t`/`4t` CPU controls, Flutter `mmap_4t` control, and **Infinix Smart 7** multi-device onboarding.
+- `apps/flutter_bench`: Added `loader` (`asset` vs `file` `mmap`) support in `BenchmarkConfig`/`BenchmarkRunner`/`BenchmarkPage`, explicit `XNNPackDelegateOptions(numThreads: N)` + delegate/options native pointer disposal, `threads`/`cpuOnly`/`loader` Intent + CLI + UI controls, per-session device JSONL cleanup before launch, and `"runtime_version": "2.20.0"`.
+- `apps/android_native_bench`: Pinned `com.google.ai.edge.litert:{litert,litert-gpu,litert-gpu-api,litert-api}:1.4.0` (C library `2.20.0`), kept `com.google.ai.edge.litert.**` in ProGuard rules, stamped `"runtime_version": "2.20.0"`, added `threads`/`cpuOnly` Intent extras + per-session JSONL cleanup, and verified release APK `.so` version string (`2.20.0`).
+- `analysis/benchkit/{runner,cli}.py` + `tests/test_runner.py`: Added `--threads`, `--cpu-only`, `--loader`, `--arm`, and `--platform` flags plus session-filtered staging pulls (`26/26` `pytest` pass, `ruff check` clean).
+
 ## 2026-11-11: Zenodo Archival DOI (`10.5281/zenodo.24128933`) & ORCID Citation Metadata
 
 ### Added

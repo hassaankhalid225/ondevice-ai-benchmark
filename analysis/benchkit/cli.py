@@ -107,7 +107,16 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    run_session(session=args.session, device_id=args.device, serial=args.serial)
+    run_session(
+        session=args.session,
+        device_id=args.device,
+        serial=args.serial,
+        threads=args.threads,
+        cpu_only=args.cpu_only,
+        loader=args.loader,
+        arm=args.arm,
+        platform_filter=args.platform,
+    )
     return 0
 
 
@@ -149,9 +158,14 @@ def build_parser() -> argparse.ArgumentParser:
     inst.set_defaults(func=cmd_install)
 
     r = sub.add_parser("run", help="orchestrate automated experiment session on device")
-    r.add_argument("--device", "-d", required=True, help="registered device_id (e.g. dev-samsung-a14)")
+    r.add_argument("--device", "-d", required=True, help="registered device_id (e.g. dev-infinix-x650c)")
     r.add_argument("--session", "-k", type=int, default=1, help="session index (1..8)")
     r.add_argument("--serial", "-s", default=None, help="device serial")
+    r.add_argument("--threads", "-t", type=int, default=4, help="explicit CPU/XNNPACK thread count (e.g. 1 or 4)")
+    r.add_argument("--cpu-only", action="store_true", help="run only CPU delegate (6 model x precision configs)")
+    r.add_argument("--loader", choices=["asset", "file"], default="asset", help="Flutter model loader mode (asset=fromBuffer calloc, file=fromFile mmap)")
+    r.add_argument("--arm", default=None, help="optional EXP-002 arm subdirectory (e.g. matched_1t, matched_4t, mmap_4t)")
+    r.add_argument("--platform", choices=["both", "flutter", "native"], default="both", help="restrict execution to one platform (e.g. flutter for loader control)")
     r.set_defaults(func=cmd_run)
 
     return p
