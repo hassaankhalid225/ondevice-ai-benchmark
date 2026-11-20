@@ -3,15 +3,37 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-21 · **Current phase:** Phase 4 Multi-Device & Paper Revision (Infinix Hot 8 + Infinix Smart 7) · **Protocol:** v0.3.0
+**Last updated:** 2026-11-21 · **Current phase:** Phase 4 Multi-Device Paper Revision Complete (Infinix Hot 8 + Infinix Smart 7, Ready for `v0.3.0-multidevice`) · **Protocol:** v0.3.0
 
 ## Current focus
-Multi-device benchmark integration across physical **Infinix Hot 8** (`dev-infinix-x650c`, Helio P22, Android 9) and **Infinix Smart 7** (`dev-infinix-x6515`, Helio A22, Android 12). Full statistical analysis, dual-device comparison tables/figures, and updating paper to a multi-device empirical study.
+Multi-device benchmark integration across physical **Infinix Hot 8** (`dev-infinix-x650c`, Helio P22, Android 9) and **Infinix Smart 7** (`dev-infinix-x6515`, Helio A22, Android 12 Go). Full joint statistical analysis (`436` summary rows, `182` comparisons), dual-device vector figures and LaTeX tables, updated paper manuscript, and self-contained submission bundle (`paper_submission_bundle.zip`).
 
 - **Completed Multi-Device Datasets (571 raw files, 47,156 records, 100% PASS `benchkit validate`):**
   - **Device 1 (Infinix Hot 8 / `dev-infinix-x650c`):** 283 raw JSONL files (`24,020` records, `23,180` retained after clock overflow exclusions).
   - **Device 2 (Infinix Smart 7 / `dev-infinix-x6515`):** 288 raw JSONL files (`23,136` records, 0 exclusions) across Sessions 1–8 under arm `smart7_full`.
+  - **Total Retained Clean Records:** **46,316 records** (16 alternating sessions).
   - **Zenodo Archival:** Base dataset archived at `10.5281/zenodo.24128933` (v0.2.0-paper1); preparing v0.3.0-multidevice release.
+
+## Next actions (in order)
+1. [x] Execute complete $N=8$ alternating campaign on `dev-infinix-x650c` (Hot 8) + $n=10$ baseline cold-start/idle trials.
+2. [x] Execute complete $N=8$ alternating campaign on `dev-infinix-x6515` (Smart 7) (288 raw files, 23,136 records, 0 exclusions).
+3. [x] Merge Smart 7 campaign into `main` and execute joint `benchkit` pipeline (`summary.csv`: 436 rows, `comparisons.csv`: 182 rows, 6 multi-device figures, 6 multi-device tables).
+4. [x] Revise all paper sections (`00-abstract` through `07-conclusion`) and update title to multi-device framing.
+5. [x] Package self-contained arXiv/Overleaf submission bundle (`paper_submission_bundle.zip`, 159.5 KB).
+6. [ ] Tag git commit as `v0.3.0-multidevice`, push to GitHub, and create release.
+7. [ ] Forward arXiv endorsement link to academic supervisor/contact for category `cs.SE`.
+8. [ ] Upload Version 2 to Zenodo under concept DOI `10.5281/zenodo.24128933`.
+
+## Phase checklist
+- [x] Phase 0 · Setup (2026-11-09)
+- [x] Phase 1 · Literature (2026-11-09; 25 verified references, 6 reading notes)
+- [x] Phase 2 · Harness apps: Flutter & Android Native (2026-11-09)
+- [ ] Phase 2b · iOS app (optional / deferred)
+- [x] Phase 3 · EXP-001 Entry-Tier Campaign on `dev-infinix-x650c` ($N=8$ + baseline, 2026-11-10)
+- [x] Phase 4 · Multi-device expansion (`EXP-002` Smart 7 campaign, 2026-11-21)
+- [x] Phase 5 · Analysis (`benchkit`: joint 436 summary rows, 182 comparisons, 6 PDF figures, 6 LaTeX tables)
+- [x] Phase 6 · Writing (All 8 `paper/sections/*.tex` updated to multi-device empirical study)
+- [ ] Phase 7 · Release (Overleaf PDF proof + author review + arXiv preprint & conference submission)
 
 - **Device Evaluated:** `dev-infinix-x650c` (Infinix Hot 8 / `Infinix_X650C`, MediaTek Helio P22 MT6765, PowerVR GE8320, 3.7 GB RAM, Android 9 / API 28; runtime JSONL slug `dev-infinix-mobility-limited-infinix-x650c`).
 - **Completed Dataset & Validation (`data/raw/dev-infinix-x650c/`):**

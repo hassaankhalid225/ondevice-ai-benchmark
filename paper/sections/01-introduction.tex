@@ -6,7 +6,7 @@ Concurrently, cross-platform mobile frameworks have gained widespread industrial
 
 Despite this convergence, mobile architects lack rigorous empirical evidence on how Flutter affects production inference engines such as Google LiteRT (formerly TensorFlow Lite). Running inference inside Flutter requires traversing a Dart Foreign Function Interface (FFI) boundary, preparing inputs via pure-Dart decoders rather than platform-native codecs, and relying on community bindings (\texttt{tflite\_flutter}) whose packaging and memory semantics differ from native Android SDKs. Existing ML benchmarks~\cite{ignatov2018ai,ignatov2019ai,reddi2022mlperfmobile,zhang2022comprehensive} profile standalone native C++ harnesses, abstracting away the host application framework, whereas cross-platform studies~\cite{biornhansen2020empirical,willocx2016comparing} evaluate UI scrolling or synthetic loops rather than delegated tensor pipelines.
 
-To bridge this gap, we execute a controlled benchmark comparing release Flutter and native Android (Kotlin) apps running identical, SHA-256-pinned models and canonical inputs on an entry-tier smartphone. Following a protocol fixed before data collection and versioned in the public repository (Protocol~v0.3.0, commit~\texttt{dc45f62}), we answer five research questions on this device:
+To bridge this gap, we execute a controlled benchmark comparing release Flutter and native Android (Kotlin) apps running identical, SHA-256-pinned models and canonical inputs across two physical entry-tier smartphones. Following a protocol fixed before data collection and versioned in the public repository (Protocol~v0.3.0, commit~\texttt{dc45f62}), we answer five research questions across these devices:
 \begin{enumerate}
     \item[\textbf{RQ1:}] \textit{Pure Kernel Latency.} Does hardware-level kernel time ($T_{\mathrm{kernel}}$) differ between stacks on CPU and GPU?
     \item[\textbf{RQ2:}] \textit{End-to-End Stage Decomposition.} How large is the end-to-end latency gap, and which stage drives it?
@@ -18,7 +18,7 @@ To bridge this gap, we execute a controlled benchmark comparing release Flutter 
 This paper makes four contributions:
 \begin{itemize}
     \item \textbf{C1: Open-Source Benchmark Suite.} Symmetric Flutter and native Android harnesses enforcing a shared execution contract, SHA-256 checks, output verification, and a reproducible analysis pipeline.
-    \item \textbf{C2: Entry-Tier Empirical Characterization.} Full evaluation of three models, two precisions, and three delegates across eight alternating sessions ($24{,}020$ raw records) plus cold launches and APK disassembly on an entry-tier Android~9 smartphone.
+    \item \textbf{C2: Multi-Device Empirical Characterization.} Full evaluation of three models, two precisions, and three delegates across 16 alternating sessions ($47{,}156$ raw records, $46{,}316$ retained) plus cold launches and APK disassembly across two physical entry-tier smartphones running Android~9 and Android~12 Go.
     \item \textbf{C3: Root-Cause Isolation.} Attribution of vision lags to pure-Dart decoding, sub-$5$\,ms FFI marshalling, and upstream LiteRT version/thread drift and unfreed \texttt{calloc} asset copies.
     \item \textbf{C4: Practitioner Decision Matrix.} Operational latency, break-even, and RAM thresholds for mobile AI architecture selection.
 \end{itemize}

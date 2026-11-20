@@ -3,10 +3,15 @@
 Following a protocol fixed prior to data collection and versioned in our public repository (Protocol~v0.3.0, commit~\texttt{dc45f62}), we isolate the latency, resource, and footprint overheads introduced by Flutter without confounding workload semantics~\cite{georges2007statistically,barrett2017virtual}.
 
 \subsection{Experimental Design and Hardware Scope}
-We evaluate four experimental factors (Table~\ref{tab:factors}) on a single entry-tier Android smartphone---the Infinix Hot~8 (\texttt{Infinix\_X650C}, MediaTek Helio~P22 MT6765 octa-core Cortex-A53 up to $2.0$\,GHz, PowerVR Rogue GE8320 GPU, $3.7$\,GB RAM, Android~9 / API~28). Entry-tier silicon intentionally magnifies memory, decoding, and boundary overheads that flagship SoCs can obscure. On API~28, Flutter~3.44.5's Impeller renderer falls back from Vulkan to OpenGL~ES~\cite{flutterimpeller2025}, and vendor NNAPI HAL support is limited, bounding generalization strictly to this entry-tier profile.
+We evaluate four experimental factors (Table~\ref{tab:factors}) across two distinct physical entry-tier Android smartphones:
+\begin{enumerate}
+    \item \textbf{Infinix Hot~8 (\texttt{dev-infinix-x650c}):} MediaTek Helio~P22 MT6765 (octa-core Cortex-A53 up to $2.0$\,GHz), PowerVR Rogue GE8320 GPU, $3.7$\,GB RAM, Android~9 / API~28.
+    \item \textbf{Infinix Smart~7 (\texttt{dev-infinix-x6515}):} MediaTek Helio~A22 MT6761 (quad-core Cortex-A53 up to $2.0$\,GHz), PowerVR Rogue GE8300 GPU, $3.6$\,GB RAM, Android~12 Go Edition / API~31.
+\end{enumerate}
+Evaluating two separate entry-tier SoC microarchitectures and Android OS branches allows us to verify whether observed overheads stem from framework architecture rather than single-device silicon artifacts. On API~28/31, Flutter~3.44.5's Impeller renderer falls back from Vulkan to OpenGL~ES~\cite{flutterimpeller2025}, matching entry-tier deployment constraints.
 
 \begin{table}[t]
-\caption{Full-Factorial Design on the Device (Infinix Hot~8, Android~9)}
+\caption{Full-Factorial Design Across Both Entry-Tier Devices}
 \label{tab:factors}
 \centering
 \resizebox{\columnwidth}{!}{
@@ -14,11 +19,12 @@ We evaluate four experimental factors (Table~\ref{tab:factors}) on a single entr
 \toprule
 \textbf{Factor} & \textbf{Evaluated Levels} \\
 \midrule
+Devices ($H$) & Infinix Hot~8 (Helio P22, Android 9), Infinix Smart~7 (Helio A22, Android 12) \\
 Platform ($P$) & Flutter~3.44.5 (Dart~3.12.2 AOT), Native Android (Kotlin~1.9.24, R8) \\
 Models ($M$) & MobileNetV3-L (Classif.), EfficientDet-L0 (Detect.), MobileBERT-QA \\
 Precision ($Q$) & FP32 (32-bit float), INT8 (full integer quantization) \\
 Delegates ($D$) & CPU (XNNPACK), GPU (OpenCL/GLES), NNAPI (Native only) \\
-Protocol & 8 alternating sessions; 20 warm-up + 100 measured; 50 fixed inputs \\
+Protocol & 16 alternating sessions (8/device); 20 warm-up + 100 measured; 50 inputs \\
 Baselines & 10 alternating cold launches and 2\,s settled idle PSS trials/stack \\
 \bottomrule
 \end{tabular}

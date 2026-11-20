@@ -3,6 +3,14 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-21: Multi-Device Joint Analysis & Paper Revision (Hot 8 + Smart 7, 46,316 Records)
+
+### Paper & Analysis
+- Executed joint multi-device `benchkit` pipeline across both physical handsets (Infinix Hot 8 and Infinix Smart 7), generating `summary.csv` (436 rows) and `comparisons.csv` (182 cross-platform comparisons).
+- Generated 6 multi-device vector PDF figures (`paper/figures/`) with dual-device forest plots and 6 multi-device LaTeX tables (`paper/tables/`) containing explicit `Device` breakdowns.
+- Updated paper title to *Flutter vs. Native Android for On-Device Inference: An Empirical Benchmark Across Entry-Tier Hardware* and revised all sections (`00-abstract` through `07-conclusion`) to integrate multi-device findings.
+- Re-packaged self-contained arXiv/Overleaf bundle `paper_submission_bundle.zip` (159.5 KB) including `\pdfoutput=1` and unified bibliography.
+
 ## 2026-11-21: EXP-002 Infinix Smart 7 Campaign Complete ($N=8$, 288 Raw JSONLs Valid)
 
 ### Data
