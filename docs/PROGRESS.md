@@ -9,11 +9,10 @@
 Branch **`exp-002`** implements all instrumentation needed for **Paper Revision Priority 1.1 (`LiteRT 1.4.0` / `2.20.0` matched `1t`/`4t` CPU controls)**, **Priority 1.2 (`Interpreter.fromFile()` `mmap` loader control)**, and **Priority 1.3A (Infinix Smart 7 multi-device onboarding)** while keeping **`main`** (`7f7bc6d`, tagged `v0.2.0-paper1`) cleanly matched to Paper 1 and `EXP-001`.
 
 - **Infinix Smart 7 Onboarding & Campaign (`smart7_full` Arm):**
-  - Completed **5 full sessions** (Sessions 1–5) on `dev-infinix-x6515` (MediaTek Helio A22, PowerVR GE8320, Android 12) across alternating execution orders for both Android Native and Flutter harnesses.
-  - **180 raw JSONL files collected (100% PASS `benchkit validate`)**, containing **14,460 valid records** (0 exclusions in `data/exclusions.yaml`).
+  - Completed **7 full sessions + Session 8 Native** (270/288 files = **93.8% of full $N=8$ campaign**) on `dev-infinix-x6515` (MediaTek Helio A22, PowerVR GE8320, Android 12) across alternating execution orders for both Android Native and Flutter harnesses.
+  - **270 raw JSONL files collected (100% PASS `benchkit validate`)**, containing **21,928 valid records** (0 exclusions in `data/exclusions.yaml`).
   - Summarized dataset into `data/processed/exp002_smart7_summary.csv` (**216 metric summary rows**).
-  - Fixed Windows cross-drive Kotlin incremental compilation issue (`kotlin.incremental=false`) and standardized Flutter CPU execution via `XNNPackDelegate()` (`TfLiteXNNPackDelegateCreate(nullptr)`) to prevent LiteRT 2.20 C ABI struct mismatch SEGV.
-  - Device autonomously executed 5 complete sessions on a single 25% battery charge over 2.5 hours until reaching cutoff threshold.
+  - Only **Session 8 Flutter suite (18 configs)** remaining to complete the full 288-file $N=8$ multi-device matrix.
 
 - **APK Runtime Parity (`exp-002`):** Both `apps/android_native_bench` and `apps/flutter_bench` release APKs now bundle `com.google.ai.edge.litert:litert:1.4.0` (C library `2.20.0`, verified `4.32 MB` `libtensorflowlite_jni.so`), accept `--ei threads`, `--ez cpuOnly`, and Flutter `--es loader asset|file` flags cleanly, pass explicit `XNNPackDelegateOptions(numThreads: N)`, delete stale per-session `*_sNN.jsonl` files prior to launch, and isolate arm pulls under `data/raw/exp002/<arm>/<device_id>/`.
 - **Completed Baseline (`main` @ `v0.2.0-paper1` / EXP-001):**

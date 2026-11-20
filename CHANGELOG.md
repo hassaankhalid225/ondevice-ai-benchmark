@@ -3,13 +3,14 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
-## 2026-11-20: EXP-002 Infinix Smart 7 Execution (Sessions 1–5 Complete, 180 Raw JSONLs Valid)
+## 2026-11-20: EXP-002 Infinix Smart 7 Execution (Sessions 1–7 + S8 Native Complete, 270 Raw JSONLs Valid)
 
 ### Data
 - Executed multi-session benchmark campaign on physical **Infinix Smart 7** (`dev-infinix-x6515`, MediaTek Helio A22, PowerVR GE8320, Android 12) under arm `smart7_full` (`threads=4`).
-- Completed **5 full sessions** (Sessions 1–5, alternating order: S1/S3/S5 Flutter first, S2/S4 Native first).
-- Collected and pulled **180 raw JSONL files** to `data/raw/exp002/smart7_full/dev-infinix-x6515/` (**100% PASS `benchkit validate`**, Schema v1.1).
-- Generated `data/processed/exp002_smart7_summary.csv` summarizing **14,460 benchmark records** (216 metric summary rows, 0 exclusions).
+- Completed **Sessions 1–7** (both Native & Flutter) and **Session 8 Native** (270 / 288 files = 93.8% complete).
+- Collected and pulled **270 raw JSONL files** to `data/raw/exp002/smart7_full/dev-infinix-x6515/` (**100% PASS `benchkit validate`**, Schema v1.1).
+- Generated `data/processed/exp002_smart7_summary.csv` summarizing **21,928 benchmark records** (216 metric summary rows, 0 exclusions).
+- Only **Session 8 Flutter suite** (18 configs) remains to complete the full $N=8$ benchmark matrix.
 
 ### Fixed
 - Fixed Windows cross-drive Gradle build failure by setting `kotlin.incremental=false` in `apps/flutter_bench/android/gradle.properties`.

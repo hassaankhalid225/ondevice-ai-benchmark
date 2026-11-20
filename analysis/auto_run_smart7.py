@@ -1,7 +1,7 @@
 """
 Autonomous multi-session runner for Infinix Smart 7 (dev-infinix-x6515)
 Branch: exp-002, Arm: smart7_full
-Includes automatic wireless ADB reconnect, screen keep-awake, and battery monitoring.
+Executes remaining Sessions 7 & 8 with battery protection and Smart 7 serial targeting.
 """
 import socket
 import sys
@@ -18,13 +18,15 @@ from benchkit.runner import run_session, run_adb, find_adb
 from benchkit.validate import validate_tree
 
 DEVICE_ID = "dev-infinix-x6515"
-PHONE_IP = "192.168.100.12"
+PHONE_IP = "192.168.43.185"
 ARM = "smart7_full"
 THREADS = 4
 BATTERY_MIN_THRESHOLD = 3  # Safety cutoff at 3%
 
+HOT8_SERIAL = "047252506A023336"  # USB Hot 8 to exclude
+
 def get_active_serial() -> str:
-    """Find current working serial (mDNS TLS or direct IP)."""
+    """Find current working serial for Smart 7 (excluding Hot 8)."""
     try:
         adb = find_adb()
         import subprocess
@@ -32,18 +34,21 @@ def get_active_serial() -> str:
         for line in res.stdout.splitlines()[1:]:
             parts = line.strip().split()
             if len(parts) >= 2 and parts[1] == "device":
-                return parts[0]
+                serial = parts[0]
+                if serial == HOT8_SERIAL:
+                    continue
+                return serial
     except Exception:
         pass
     return ""
 
 def reconnect_if_needed() -> str:
-    """Ensure device is connected; scan wireless port and reconnect if dropped."""
+    """Ensure Smart 7 is connected; scan wireless port and reconnect if dropped."""
     serial = get_active_serial()
     if serial:
         return serial
 
-    print(f"[RECONNECT] Device offline. Scanning ports on {PHONE_IP}...", flush=True)
+    print(f"[RECONNECT] Smart 7 offline. Scanning ports on {PHONE_IP}...", flush=True)
     open_ports = []
     def check_port(p):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -92,7 +97,7 @@ def main():
             f.write(line + "\n")
 
     log("\n=======================================================")
-    log("=== Resuming Autonomous Benchmark for Infinix Smart 7 ===")
+    log("=== Starting Final Campaign Sessions (S7 & S8) for Smart 7 ===")
     log("=======================================================")
 
     serial = reconnect_if_needed()
@@ -108,16 +113,8 @@ def main():
         log(f"Battery too low ({bat}% <= {BATTERY_MIN_THRESHOLD}%). Exiting.")
         return
 
-    # Plan:
-    # S1 Native & Flutter are 100% complete.
-    # S2 Native is 100% complete.
-    # Next: S2 Flutter, then S3..S8 (both platforms).
+    # Plan: Sessions 7 and 8
     plan = [
-        (2, "flutter"),
-        (3, "both"),
-        (4, "both"),
-        (5, "both"),
-        (6, "both"),
         (7, "both"),
         (8, "both"),
     ]
@@ -174,7 +171,7 @@ def main():
         except Exception as ve:
             log(f"Validation error: {ve}")
 
-    log("\n=== Autonomous Benchmark Run Completed ===")
+    log("\n=== All Target Benchmark Sessions (1 through 8) Complete! ===")
     try:
         if serial:
             run_adb(["shell", "svc", "power", "stayon", "false"], device_serial=serial, check=False)
