@@ -3,14 +3,13 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
-## 2026-11-20: EXP-002 Infinix Smart 7 Execution (Sessions 1–7 + S8 Native Complete, 270 Raw JSONLs Valid)
+## 2026-11-21: EXP-002 Infinix Smart 7 Campaign Complete ($N=8$, 288 Raw JSONLs Valid)
 
 ### Data
-- Executed multi-session benchmark campaign on physical **Infinix Smart 7** (`dev-infinix-x6515`, MediaTek Helio A22, PowerVR GE8320, Android 12) under arm `smart7_full` (`threads=4`).
-- Completed **Sessions 1–7** (both Native & Flutter) and **Session 8 Native** (270 / 288 files = 93.8% complete).
-- Collected and pulled **270 raw JSONL files** to `data/raw/exp002/smart7_full/dev-infinix-x6515/` (**100% PASS `benchkit validate`**, Schema v1.1).
-- Generated `data/processed/exp002_smart7_summary.csv` summarizing **21,928 benchmark records** (216 metric summary rows, 0 exclusions).
-- Only **Session 8 Flutter suite** (18 configs) remains to complete the full $N=8$ benchmark matrix.
+- Completed all 8 sessions ($N=8$) of the full multi-device benchmark campaign on physical **Infinix Smart 7** (`dev-infinix-x6515`, MediaTek Helio A22, PowerVR GE8320, Android 12) under arm `smart7_full` (`threads=4`).
+- Collected and pulled **288 raw JSONL files** (144 Android Native + 144 Flutter) to `data/raw/exp002/smart7_full/dev-infinix-x6515/` (**100% PASS `benchkit validate`**, Schema v1.1).
+- Generated `data/processed/exp002_smart7_summary.csv` summarizing **23,136 benchmark records** (216 metric summary rows, 0 exclusions).
+- Generated `data/processed/exp002_smart7_comparisons.csv` computing **90 cross-platform comparisons** (Mann-Whitney U, Hodges-Lehmann median difference, and TOST equivalence testing).
 
 ### Fixed
 - Fixed Windows cross-drive Gradle build failure by setting `kotlin.incremental=false` in `apps/flutter_bench/android/gradle.properties`.

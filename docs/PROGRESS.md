@@ -3,16 +3,16 @@
 > **Update this file at the end of every working session.** It is the first thing the next
 > person or agent reads. Keep "Next actions" concrete (a stranger should be able to start on it).
 
-**Last updated:** 2026-11-20 · **Current phase:** `EXP-002` Multi-Device Benchmark Active (`exp-002` branch; Paper 1 frozen on `main` @ `v0.2.0-paper1`) · **Protocol:** v0.3.0
+**Last updated:** 2026-11-21 · **Current phase:** `EXP-002` Smart 7 Complete ($N=8$, 288/288 Files) (`exp-002` branch; Paper 1 frozen on `main` @ `v0.2.0-paper1`) · **Protocol:** v0.3.0
 
 ## Current focus
 Branch **`exp-002`** implements all instrumentation needed for **Paper Revision Priority 1.1 (`LiteRT 1.4.0` / `2.20.0` matched `1t`/`4t` CPU controls)**, **Priority 1.2 (`Interpreter.fromFile()` `mmap` loader control)**, and **Priority 1.3A (Infinix Smart 7 multi-device onboarding)** while keeping **`main`** (`7f7bc6d`, tagged `v0.2.0-paper1`) cleanly matched to Paper 1 and `EXP-001`.
 
-- **Infinix Smart 7 Onboarding & Campaign (`smart7_full` Arm):**
-  - Completed **7 full sessions + Session 8 Native** (270/288 files = **93.8% of full $N=8$ campaign**) on `dev-infinix-x6515` (MediaTek Helio A22, PowerVR GE8320, Android 12) across alternating execution orders for both Android Native and Flutter harnesses.
-  - **270 raw JSONL files collected (100% PASS `benchkit validate`)**, containing **21,928 valid records** (0 exclusions in `data/exclusions.yaml`).
-  - Summarized dataset into `data/processed/exp002_smart7_summary.csv` (**216 metric summary rows**).
-  - Only **Session 8 Flutter suite (18 configs)** remaining to complete the full 288-file $N=8$ multi-device matrix.
+- **Infinix Smart 7 Campaign Complete (`smart7_full` Arm, $N=8$):**
+  - **288 / 288 raw JSONL files collected (100% PASS `benchkit validate`)** on physical **Infinix Smart 7** (`dev-infinix-x6515`, MediaTek Helio A22, PowerVR GE8320, Android 12) across all 8 alternating sessions (144 Android Native + 144 Flutter).
+  - **23,136 raw records** collected and validated under Schema v1.1 with **0 exclusions** in `data/exclusions.yaml`.
+  - Generated `data/processed/exp002_smart7_summary.csv` (**216 summary rows**) and `data/processed/exp002_smart7_comparisons.csv` (**90 cross-platform comparisons**).
+  - Resolved all environment challenges: Windows cross-drive Kotlin incremental build (`kotlin.incremental=false`), Gradle wrapper 8.7 pinning, `tflite_flutter 0.12.1` LiteRT 2.20 C ABI struct alignment (`XNNPackDelegate()`), and autonomous ADB watchdog for wireless and USB execution.
 
 - **APK Runtime Parity (`exp-002`):** Both `apps/android_native_bench` and `apps/flutter_bench` release APKs now bundle `com.google.ai.edge.litert:litert:1.4.0` (C library `2.20.0`, verified `4.32 MB` `libtensorflowlite_jni.so`), accept `--ei threads`, `--ez cpuOnly`, and Flutter `--es loader asset|file` flags cleanly, pass explicit `XNNPackDelegateOptions(numThreads: N)`, delete stale per-session `*_sNN.jsonl` files prior to launch, and isolate arm pulls under `data/raw/exp002/<arm>/<device_id>/`.
 - **Completed Baseline (`main` @ `v0.2.0-paper1` / EXP-001):**
