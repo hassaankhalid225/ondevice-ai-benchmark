@@ -3,6 +3,20 @@
 Format: newest first. One entry per working session. Describe *what* changed and *why*.
 Categories: Added / Changed / Fixed / Data / Paper / Decisions.
 
+## 2026-11-20: EXP-002 Infinix Smart 7 Execution (Sessions 1–5 Complete, 180 Raw JSONLs Valid)
+
+### Data
+- Executed multi-session benchmark campaign on physical **Infinix Smart 7** (`dev-infinix-x6515`, MediaTek Helio A22, PowerVR GE8320, Android 12) under arm `smart7_full` (`threads=4`).
+- Completed **5 full sessions** (Sessions 1–5, alternating order: S1/S3/S5 Flutter first, S2/S4 Native first).
+- Collected and pulled **180 raw JSONL files** to `data/raw/exp002/smart7_full/dev-infinix-x6515/` (**100% PASS `benchkit validate`**, Schema v1.1).
+- Generated `data/processed/exp002_smart7_summary.csv` summarizing **14,460 benchmark records** (216 metric summary rows, 0 exclusions).
+
+### Fixed
+- Fixed Windows cross-drive Gradle build failure by setting `kotlin.incremental=false` in `apps/flutter_bench/android/gradle.properties`.
+- Pinned Gradle distribution to `gradle-8.7-all.zip` in `apps/flutter_bench/android/gradle/wrapper/gradle-wrapper.properties`.
+- Resolved `tflite_flutter 0.12.1` SEGV crash by invoking default `XNNPackDelegate()` (`nullptr` C options) in `apps/flutter_bench/lib/src/harness/benchmark_runner.dart`, preventing Dart-C ABI struct size mismatch against LiteRT 2.20 C runtime.
+- Added autonomous watchdog runner `analysis/auto_run_smart7.py` with dynamic wireless ADB TLS reconnect and battery threshold protection.
+
 ## 2026-11-11: EXP-002 Controlled Runtime/Threading & `fromFile` Harness Branch (`exp-002`)
 
 ### Decisions

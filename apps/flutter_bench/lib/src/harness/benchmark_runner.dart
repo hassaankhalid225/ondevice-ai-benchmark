@@ -85,14 +85,11 @@ class BenchmarkRunner {
     final options = InterpreterOptions()..threads = config.threads;
     GpuDelegateOptionsV2? gpuOptions;
     GpuDelegateV2? gpuDelegate;
-    XNNPackDelegateOptions? xnnpackOptions;
     XNNPackDelegate? xnnpackDelegate;
 
     void disposeDelegateResources() {
       xnnpackDelegate?.delete();
       xnnpackDelegate = null;
-      xnnpackOptions?.delete();
-      xnnpackOptions = null;
       gpuDelegate?.delete();
       gpuDelegate = null;
       gpuOptions?.delete();
@@ -108,8 +105,7 @@ class BenchmarkRunner {
         gpuDelegate = GpuDelegateV2(options: gpuOptions);
         options.addDelegate(gpuDelegate!);
       } else if (config.delegate == 'cpu') {
-        xnnpackOptions = XNNPackDelegateOptions(numThreads: config.threads);
-        xnnpackDelegate = XNNPackDelegate(options: xnnpackOptions);
+        xnnpackDelegate = XNNPackDelegate();
         options.addDelegate(xnnpackDelegate!);
       } else if (config.delegate == 'nnapi') {
         const msg = 'NNAPI delegate is unsupported in tflite_flutter 0.12.1 Dart bindings';
